@@ -1,0 +1,143 @@
+Screen {
+    align: center middle;
+    layout: vertical;
+    height: 100%;
+}
+
+.scrollable-content {
+    height: 1fr;  /* Занимает всю доступную высоту */
+    overflow-y: auto;  /* Включаем вертикальную прокрутку */
+}
+
+.bottom-bar {
+    height: auto;  /* Высота по содержимому */
+    min-height: 3;  /* Минимальная высота в строках, чтобы не сжимался слишком сильно */
+    /* background: $surface;  Фон, чтобы отделить от контента (опционально) */
+    /* border-top: solid $primary;  Разделитель (опционально) */
+}
+
+
+#markdown_start {
+   /* column-span: 2;*/
+
+    border: solid #0087d7;
+    height: 1fr;  /* Занимает всю доступную высоту */
+    overflow-y: auto;  /* Включаем вертикальную прокрутку */
+}
+
+Select {
+    width: 60%;
+}
+
+#continue {
+    width: 60%;
+}
+
+#left_select {
+    align: right middle;
+}
+
+#right_button {
+    align: left middle;
+}
+
+#scroll_input {
+    height: 1fr;
+}
+
+#horizontal_input {
+   /* height: 15%;*/
+    padding: 1;
+}
+
+#horizontal_select_register {
+    padding: 1;
+}
+
+#result_processing {
+    height: 1fr;  /* Занимает всю доступную высоту */
+    overflow-y: auto;  /* Включаем вертикальную прокрутку */
+}
+
+#screen_loader_indicator {
+    align: center middle;
+    height: 25%;
+    width: 50%;
+    border: round orange;
+}
+
+#screen_progress_bar {
+    align: center middle;
+    height: 25%;
+    width: 50%;
+    border: round orange;
+    }
+    
+#label_progress {
+    text-align: center;
+    width: 100%;
+    height: 75%;
+}
+
+#label_loader {
+    text-align: center;
+    width: 100%;
+    height: 50%;
+}
+    
+ProgressBar {
+    align: center middle;
+    width: 100%;
+}
+
+LoadingIndicator {
+    text-align: center;
+    width: 100%;
+    height: 25%;
+}
+
+SettingsScreen {
+        align: center middle;
+    }
+        #container-settings-modal {
+            width: 70%;
+            height: 70%;
+            margin: 1 1;
+            padding: 1 1;
+            border: round orange;
+            layout: vertical;
+        }
+
+        #static-settings-modal {
+            height: auto;
+            margin-bottom: 1;
+            content-align: center middle;
+        }
+
+        #scrollable-selection-list {
+            overflow-y: auto;
+            height: 1fr;  /* Занимает всю доступную высоту */
+            overflow-y: auto;  /* Включаем вертикальную прокрутку */
+        }
+
+        #selection-list-settings-modal {
+            width: 100%;
+        }
+
+        #static_help-settings-modal {
+            text-style: italic;
+            height: auto;
+            margin: 1 0;
+        }
+
+        #horizontals-button-settings-modal {
+            height: auto;
+            align: center middle;
+            margin-top: 1;
+        }
+        .buttons-settings-modal {
+            margin: 0 1;
+        }
+        Button {
+            width: 45%;
+        }
