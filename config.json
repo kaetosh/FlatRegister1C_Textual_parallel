@@ -25,5 +25,8 @@
             "57",
             1
         ]
-    ]
+    ],
+    "general_settings": {
+        "parallel_processing": true
+    }
 }

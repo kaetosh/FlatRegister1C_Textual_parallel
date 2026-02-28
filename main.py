@@ -24,12 +24,14 @@ from textual.widgets import (Button,
                              ProgressBar,
                              Select,
                              SelectionList,
-                             Static)
+                             Static,
+                             Switch)
 
 from file_handler import FileHandler
 from support_functions import (DEFAULT_CONFIG,
                                generate_failed_processing_markdown,
                                is_valid_dragged_path,
+                               get_parallel_processing_option,
                                read_config,
                                update_config)
 from text import REQUIREMENTS, START_WINDOW
@@ -85,7 +87,7 @@ class ResultProcessingDirectotyScreen(ModalScreen):
         yield Markdown(app.failed_processing_markdown, id='result_processing')
         yield Footer(show_command_palette=False)
 
-class SettingsScreen(ModalScreen):
+class SettingsScreenRegister(ModalScreen):
     """
     Окно с настройками обработчика анализа счетов.
     """
@@ -101,7 +103,7 @@ class SettingsScreen(ModalScreen):
         yield Container(
             Static(
                 "Отметьте корр.счета¹, по которым не нужна расшифровка по суб.счетам",
-                id="static-settings-modal"
+                id="static-settings-register-modal"
             ),
             
             VerticalScroll(
@@ -117,10 +119,10 @@ class SettingsScreen(ModalScreen):
             Horizontal(
                 Button("Сохранить", variant="success", id="button-save-settings-modal", classes='buttons-settings-modal'),
                 Button("Отмена", variant="primary", id="button-cancel-settings-modal", classes='buttons-settings-modal'),
-                id="horizontals-button-settings-modal"
+                id="horizontals-button-settings-register-modal"
             ),
             
-            id="container-settings-modal"
+            id="container-settings-screen-modal"
         )
         yield Footer(show_command_palette=False)
     
@@ -160,7 +162,7 @@ class RegisterScreen(Screen):
                         key_display="esc"),
                 Binding(key="f3",
                         action="open_settings",
-                        description="Настройки",
+                        description="Настройки регистра",
                         key_display="F3")
                         ]
     
@@ -172,7 +174,7 @@ class RegisterScreen(Screen):
                                   can_focus=False # Отключаем возможность фокуса
                                   ) 
         yield Horizontal(
-            Input(placeholder="Перетащите файл или папку в окно программы и нажмите Enter.",
+            Input(placeholder="Перетащите .xlsx файл регистра или папку c .xlsx файлами регистров в окно программы и нажмите Enter.",
                   tooltip="Окно программы должно быть активным.",
                   type="text",
                   id='path_register',
@@ -186,7 +188,7 @@ class RegisterScreen(Screen):
     def on_mount(self) -> None:
         # Фокусируемся на Input при монтировании экрана
         self.title = '🤖 Обработчик регистров 1С 6-в-1'
-        self.sub_title = 'Формирует удобную для анализа плоскую таблицу'
+        # self.sub_title = 'Формирует удобную для анализа плоскую таблицу'
         self.query_one("#path_register").focus()
 
     def action_open_settings(self):
@@ -197,7 +199,7 @@ class RegisterScreen(Screen):
                 timeout=3
             )
             return
-        self.app.push_screen(SettingsScreen())
+        self.app.push_screen(SettingsScreenRegister())
     
     def on_input_submitted(self, event: Input.Submitted) -> None:
         """Обработчик нажатия enter в поле ввода"""
@@ -223,7 +225,8 @@ class RegisterScreen(Screen):
     
     @work(thread=True)  # Запускаем в отдельном потоке, чтобы не блокировать UI
     def process_file(self, input_path, register, progress_screen) -> None:
-        file_handler = FileHandler()
+        parallel_processing_option = get_parallel_processing_option()
+        file_handler = FileHandler(parallel = parallel_processing_option)
         failed_processing_markdown = ''
         
         try:
@@ -263,9 +266,57 @@ class RegisterScreen(Screen):
             self.app.pop_screen()
         self.notify(f"Ошибка обработки: {error}")
 
+class SettingsScreen(ModalScreen):
+    """
+    Окно с настройками.
+    """
+    
+    def compose(self) -> ComposeResult:
+        config = read_config()
+        general_options = config.get("general_settings", DEFAULT_CONFIG.get("general_settings", {}))
+        general_header_value = bool(general_options.get("parallel_processing", 0))
+        
+        yield Container(
+            Horizontal(
+                Static("Параллельная обработка в пакетном режиме¹:", classes="statics-settings-modal"),
+                Switch(value=general_header_value, id='switch-general-header', classes="switchs-settings-modal"),
+                id='horizontal-general-header-settings-modal'
+                ),
+            Static(
+                "¹не применяется к регистрам Обороты счета",
+                id="statics-no-turnover-settings-modal"
+            ),
+            Horizontal(
+                Button("Сохранить", variant="success", id="button-settings-modal"),
+                id="horizontals-button-settings-modal"),
+            id="container-settings-modal"
+        )
+    
+    def on_mount(self) -> None:
+        self.query_one('#horizontal-general-header-settings-modal').tooltip = 'Ускоряет обработку, но загружает ресурсы компьютера'
+    
+    def on_button_pressed(self, event: Button.Pressed):
+        """Обрабатывает нажатие кнопки "Сохранить"."""
+        if event.button.id == "button-settings-modal":
+            general_header_val = bool(self.query_one('#switch-general-header', Switch).value)
+            updates = {
+                        "general_settings": {
+                            "parallel_processing": general_header_val,
+                                            }
+                      }
+
+            update_config(updates=updates)
+            self.dismiss()
+
 class FlatRegister1CApp(App):
     CSS_PATH = "style.tcss"
-
+    
+    BINDINGS = [
+                Binding(key="f3",
+                        action="open_settings",
+                        description="Настройки обработки",
+                        key_display="F3")
+                        ]
     # тип регистра (ОСВ, анализ счета, обороты счета и т.д.)
     register = reactive("Не выбран регистр!")
     
@@ -312,11 +363,16 @@ class FlatRegister1CApp(App):
             id='horizontal_select_register',
             classes="bottom-bar"
         )
+        self.footer = Footer(show_command_palette=False)
+        yield self.footer
     
     def on_mount(self) -> None:
         self.title = '🤖 Обработчик регистров 1С 6-в-1'
-        self.sub_title = 'Формирует удобную для анализа плоскую таблицу'    
-        
+        # self.sub_title = 'Формирует удобную для анализа плоскую таблицу'    
+    
+    def action_open_settings(self):
+        self.app.push_screen(SettingsScreen())
+    
     @on(Select.Changed)
     def select_changed(self, event: Select.Changed) -> None:
         button = self.query_one(Button)

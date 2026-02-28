@@ -54,7 +54,10 @@ DEFAULT_CONFIG = {
             "57",
             1
         ]
-    ]
+    ],
+    "general_settings": {
+        "parallel_processing": False
+    }
 }
 
 # Добавляем функцию для очистки кэша, чтобы можно было перечитать конфиг
@@ -435,3 +438,10 @@ def get_accounts_without_subaccount() -> List[str]:
     accounts_without_subaccount = config.get("accounts_without_subaccount",
                                                           DEFAULT_CONFIG.get("accounts_without_subaccount", {}))
     return [i[0] for i in accounts_without_subaccount if i[2]==1]
+
+# КоррСчета, субсчета по которым не включаем в итоговые файлы, оставляем только счета
+def get_parallel_processing_option() -> bool:
+    config = read_config()
+    general_options = config.get("general_settings", DEFAULT_CONFIG.get("general_settings", {}))
+    parallel_processing_option = bool(general_options.get("parallel_processing", 0))
+    return parallel_processing_option

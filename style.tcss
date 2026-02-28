@@ -96,10 +96,10 @@ LoadingIndicator {
     height: 25%;
 }
 
-SettingsScreen {
+SettingsScreenRegister {
         align: center middle;
     }
-        #container-settings-modal {
+        #container-settings-screen-modal {
             width: 70%;
             height: 70%;
             margin: 1 1;
@@ -108,7 +108,7 @@ SettingsScreen {
             layout: vertical;
         }
 
-        #static-settings-modal {
+        #static-settings-register-modal {
             height: auto;
             margin-bottom: 1;
             content-align: center middle;
@@ -130,7 +130,7 @@ SettingsScreen {
             margin: 1 0;
         }
 
-        #horizontals-button-settings-modal {
+        #horizontals-button-settings-register-modal {
             height: auto;
             align: center middle;
             margin-top: 1;
@@ -141,3 +141,34 @@ SettingsScreen {
         Button {
             width: 45%;
         }
+        
+SettingsScreen {
+        align: center middle;
+    }
+        #container-settings-modal {
+           width: 50%;
+           height: 50%;
+           margin: 1 1;
+           padding: 1 1;
+           border: round orange;
+           layout: vertical;
+        }
+       .statics-settings-modal {
+          content-align: left middle;
+          height: 3;
+          width: 80%; 
+       }
+       .switchs-settings-modal {
+           content-align: right middle;
+           width: 20%;
+       }
+       #statics-no-turnover-settings-modal {
+           text-style: italic;
+           text-align: center;
+       }
+       #horizontals-button-settings-modal{
+           align: center bottom;
+           }
+       #button-settings-modal {
+            width: 45%;
+                    }
