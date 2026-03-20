@@ -221,7 +221,7 @@ class FileProcessor(ABC):
         
         return result
 
-   
+    # ИСХОДНАЯ ВЕРСИЯ
     @staticmethod
     def _preprocessor_openpyxl(file_like_object: BytesIO) -> pd.DataFrame:
         # Ключевые заголовки для поиска проблемной строки
@@ -261,6 +261,7 @@ class FileProcessor(ABC):
         data = []
         for row in sheet.iter_rows(min_row=1, max_row=max_row, max_col=max_col, values_only=True):
             data.append(list(row))
+    
     
         # Находим индекс строки с заголовками, содержащей все ключевые слова
         header_row_idx = None
@@ -320,6 +321,7 @@ class FileProcessor(ABC):
         workbook.close()
         return df
 
+    
     
     @staticmethod
     def _process_dataframe_optimized(df: pd.DataFrame) -> pd.DataFrame:

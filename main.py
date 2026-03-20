@@ -1,4 +1,7 @@
 import time
+import segno
+import io
+from functools import lru_cache
 from typing import List
 from pathlib import Path
 
@@ -22,6 +25,8 @@ from textual.widgets import (Button,
                              LoadingIndicator,
                              Markdown,
                              ProgressBar,
+                             RadioButton,
+                             RadioSet,
                              Select,
                              SelectionList,
                              Static,
@@ -112,7 +117,7 @@ class SettingsScreenRegister(ModalScreen):
             ),
             
             Static(
-                "¹нужно изменить список? Напишите в https://t.me/Python_for_the_clerk",
+                "¹нужно изменить список? см. Контакты",
                 id="static_help-settings-modal"
             ),
             
@@ -256,6 +261,7 @@ class RegisterScreen(Screen):
         while len(self.app.screen_stack) > 1:
             self.app.pop_screen()
         self.notify("Обработка завершена!")
+        self.app.contact_visibility = 1
         if failed_processing_markdown:
             app.failed_processing_markdown = failed_processing_markdown
             self.app.push_screen(ResultProcessingDirectotyScreen())
@@ -265,6 +271,11 @@ class RegisterScreen(Screen):
         while len(self.app.screen_stack) > 1:
             self.app.pop_screen()
         self.notify(f"Ошибка обработки: {error}")
+        self.app.contact_visibility = 1
+        
+    def key_escape(self):
+        print('Нажали escape!!!')
+        self.app.contact_visibility = 1
 
 class SettingsScreen(ModalScreen):
     """
@@ -308,15 +319,150 @@ class SettingsScreen(ModalScreen):
             update_config(updates=updates)
             self.dismiss()
 
+class ContactsScreen(ModalScreen):
+    """Окно с контактами — улучшенная версия с горизонтальным расположением."""
+
+    DEFAULT_CSS = """
+    ContactsScreen {
+        background: $surface;
+    }
+
+    #info_text {
+        text-align: center;
+        margin: 1 1;
+        padding: 1;
+        width: 100%;
+    }
+
+    .flex-row {
+        layout: horizontal;
+        align: center middle;
+        margin: 1 1;
+        padding: 1;
+        height: auto;
+        width: 100%;
+    }
+
+    .selector-container {
+        width: 30%;
+        align: center middle;
+        padding: 0;
+    }
+
+    .selector-label {
+        text-align: center;
+        text-style: bold;
+        margin-bottom: 1;
+    }
+
+    #messenger_selector {
+        width: 100%;
+        margin: 0;
+    }
+
+    .qr-container {
+        width: 65%;
+        align: center middle;
+        padding: 0;
+        border-title-align: center;
+    }
+
+    .qr-label {
+        text-align: center;
+        text-style: bold;
+        margin-bottom: 1;
+    }
+
+    #qr_code {
+        text-align: center;
+        margin: 0;
+        padding: 1;
+        width: 100%;
+        height: auto;
+        background: $surface;
+    }
+    """
+
+    BINDINGS = [
+        Binding(key="escape", action="app.pop_screen", description="Закрыть", key_display="esc")
+    ]
+
+    @staticmethod
+    @lru_cache(maxsize=2)
+    def get_qr_ascii(data: str) -> str:
+        """Генерирует QR код с кэшированием"""
+        qr = segno.make(data)
+        buffer = io.StringIO()
+        qr.terminal(out=buffer, border=2, compact=True)
+        return buffer.getvalue()
+
+    def compose(self) -> ComposeResult:
+        # Информационный текст
+        yield Static(
+            "Следите 👀 за релизами и обновлениями в наших группах.\n"
+            "По всем вопросам и сообщениям об ошибках обращайтесь на почту 📧 me@karabedyan.ru или в указанные 💬 мессенджеры.",
+            id="info_text"
+        )
+
+        # Горизонтальный контейнер: переключатель + QR-код
+        with Static(classes="flex-row"):
+            # Левая часть: переключатель
+            with Static(classes="selector-container"):
+                yield Static("Выберите мессенджер:", classes="selector-label")
+                with RadioSet(id="messenger_selector"):
+                    yield RadioButton("Telegram", id="telegram", value=True)
+                    yield RadioButton("MAX", id="max", value=False)
+
+            # Правая часть: QR-код
+            with Static(classes="qr-container"):
+                yield Static("", id="qr_label", classes="qr-label")
+                yield Static("", id="qr_code", classes="qr-code", markup=False)
+
+        yield Footer()
+
+    def on_mount(self) -> None:
+        """При монтировании окна устанавливаем начальный QR-код"""
+        self.update_qr_code("telegram")
+
+    def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
+        """Обработчик изменения выбора в RadioSet"""
+        selected_id = event.pressed.id
+        if selected_id in ("telegram", "max"):
+            self.update_qr_code(selected_id)
+
+    def update_qr_code(self, messenger: str) -> None:
+        """Обновляет QR-код в зависимости от выбранного мессенджера"""
+        if messenger == "telegram":
+            data = "https://t.me/Python_for_the_clerk"
+            label = "Группа в Telegram:"
+        else:  # max
+            data = "https://max.ru/join/tA7p1FrtqWB4br4hEvmP_p7VgzQBC_Xy1LXT-u95-Q"
+            label = "Группа в MAX:"
+
+        qr_ascii = self.get_qr_ascii(data)
+        self.query_one("#qr_label", Static).update(label)
+        self.query_one("#qr_code", Static).update(qr_ascii)
+
+    def key_escape(self) -> None:
+        """Обработчик нажатия клавиши ESC"""
+        self.dismiss()
+
 class FlatRegister1CApp(App):
     CSS_PATH = "style.tcss"
     
     BINDINGS = [
-                Binding(key="f3",
-                        action="open_settings",
-                        description="Настройки обработки",
-                        key_display="F3")
+        Binding(key="f1",
+                action="open_contacts",
+                description="Контакты",
+                key_display="F1"),        
+        Binding(key="f3",
+                action="open_settings",
+                description="Настройки обработки",
+                key_display="F3")
                         ]
+    
+    contact_visibility = reactive(1, bindings=True)
+    
     # тип регистра (ОСВ, анализ счета, обороты счета и т.д.)
     register = reactive("Не выбран регистр!")
     
@@ -373,6 +519,9 @@ class FlatRegister1CApp(App):
     def action_open_settings(self):
         self.app.push_screen(SettingsScreen())
     
+    def action_open_contacts(self):
+        self.app.push_screen(ContactsScreen())
+    
     @on(Select.Changed)
     def select_changed(self, event: Select.Changed) -> None:
         button = self.query_one(Button)
@@ -388,7 +537,15 @@ class FlatRegister1CApp(App):
             if select.value is not Select.BLANK:
                 self.register = select.value
                 self.register_requirements = REQUIREMENTS.get(select.value, "Не выбран регистр для обработки!")
+                self.contact_visibility = 0
                 self.push_screen(RegisterScreen())
+                
+    # скрытие кнопки с контактами
+    def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        """Check if an action may run."""
+        if action == "open_contacts" and self.contact_visibility == 0:
+            return False
+        return True
             
 if __name__ == "__main__":
     app = FlatRegister1CApp()

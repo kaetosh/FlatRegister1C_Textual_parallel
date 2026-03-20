@@ -161,11 +161,12 @@ class AccountOSV_UPPFileProcessor(FileProcessor):
         # Имя файла для включения в отдельный столбец итоговой таблицы
         self.file = file_path.name
         
+        
         # исправляем ошибку выгрузки из 1С в старую версию Excel
         fixed_data = fix_1c_excel_case(file_path)
-        
         # предобработка (добавление столбцов Уровень и Курсив)
         df = self._preprocessor_openpyxl(fixed_data)
+        
         
         del fixed_data  # Освобождаем память
         

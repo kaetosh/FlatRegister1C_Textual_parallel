@@ -14,7 +14,8 @@ import re, os
 import pandas as pd
 from typing import Optional
 from itertools import product
-
+import openpyxl
+import tempfile
 
 from custom_errors import IncorrectFolderOrFilesPath
 # Глобальные константы
@@ -299,6 +300,12 @@ def validate_paths(paths: Iterable[Path]) -> List[Path]:
     
     return normalized_paths
 
+
+from pathlib import Path
+
+
+
+    
 def fix_1c_excel_case(file_path: Path) -> BytesIO:
     """Исправляет регистр имен в xlsx-архивах 1С"""
     try:
@@ -326,7 +333,6 @@ def fix_1c_excel_case(file_path: Path) -> BytesIO:
         raise RuntimeError(
             f"Ошибка обработки файла {file_path.name}: {str(e)}"
         ) from e
-
 
 
 def generate_dash_combinations(path_str: str) -> List[str]:

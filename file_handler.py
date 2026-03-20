@@ -242,6 +242,13 @@ class FileHandler:
             processor = self.processor_factory.get_processor(file_path, self.type_register)
             result, check = processor.process_file(file_path)
             
+            
+            
+            
+            # result = result.map(lambda x: x.rstrip() if isinstance(x, str) else x)
+            
+            
+            
             self.storage_processed_registers[file_path.name] = result
             self.check[file_path.name] = check
         
@@ -326,6 +333,10 @@ class FileHandler:
         try:
             processor = FileProcessorFactory.get_processor(file_path, type_register)
             result, check = processor.process_file(file_path)
+            
+            # result = result.map(lambda x: x.rstrip() if isinstance(x, str) else x)
+            
+            
             return processor, result, check
         except Exception as e:
             raise e
@@ -362,12 +373,12 @@ class FileHandler:
             for key, sheets in sheet_mapping.items():
                 df, df_check = results[key]
                 if not df.empty:
+                    df = df.map(lambda x: x.rstrip() if isinstance(x, str) else x)
                     write_df_in_chunks(writer, df, sheets[0] if isinstance(sheets, tuple) else sheets)
                 if isinstance(sheets, tuple) and not df_check.empty:
                     write_df_in_chunks(writer, df_check, sheets[1])
         
         self._open_file(temp_filename)
-        # print('Обработка завершена.' + ' ' * 20)
 
     @staticmethod
     def _open_file(file_path: str) -> None:
@@ -393,6 +404,7 @@ class FileHandler:
             # Основные данные
             for sheet_name, df in self.storage_processed_registers.items():
                 safe_name = sheet_name[:31]
+                df = df.map(lambda x: x.rstrip() if isinstance(x, str) else x)
                 df.to_excel(writer, sheet_name=safe_name, index=False)
             
             # Данные проверки
