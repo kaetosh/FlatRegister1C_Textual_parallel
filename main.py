@@ -436,7 +436,7 @@ class ContactsScreen(ModalScreen):
             data = "https://t.me/Python_for_the_clerk"
             label = "Группа в Telegram:"
         else:  # max
-            data = "https://max.ru/join/tA7p1FrtqWB4br4hEvmP_p7VgzQBC_Xy1LXT-u95-Q"
+            data = "https://max.ru/join/tA7p1FrtqWBh4br4hEvmP_p7VgzQBC_Xy1LXT-u95-Q"
             label = "Группа в MAX:"
 
         qr_ascii = self.get_qr_ascii(data)
