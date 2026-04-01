@@ -29,4 +29,4 @@
 ## Создание .exe файла с помощью nuitka (python 3.13)
 используйте команду: `nuitka --standalone --include-data-file="style.tcss=style.tcss" --include-data-dir=".venv313\Lib\site-packages\rich\_unicode_data=rich\_unicode_data" --include-package=rich --include-package=textual --include-package-data=rich --include-package-data=textual main.py`
 ## Готовая сборка доступна по адресу:
-[https://disk.yandex.ru/d/S5r-k4I5KXOecA](https://disk.yandex.ru/d/0qZiRjtuQtcdaA)
+https://disk.yandex.ru/d/S5r-k4I5KXOecA

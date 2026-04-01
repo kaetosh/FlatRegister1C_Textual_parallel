@@ -28,5 +28,6 @@
     ],
     "general_settings": {
         "parallel_processing": true
-    }
+    },
+    "keep_subaccounts": true
 }

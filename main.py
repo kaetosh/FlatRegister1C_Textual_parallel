@@ -94,60 +94,83 @@ class ResultProcessingDirectotyScreen(ModalScreen):
 
 class SettingsScreenRegister(ModalScreen):
     """
-    Окно с настройками обработчика анализа счетов.
+    Окно с настройками обработчика анализа счетов / оборотов счета.
     """
-    
+    def __init__(self, register_type: str, **kwargs):
+        super().__init__(**kwargs)
+        self.register_type = register_type
+        self.config = read_config()
+        
     def compose(self) -> ComposeResult:
                 
-        # 1. Читаем конфигурацию при создании окна
-        config = read_config()
+        if self.app.register in ["analisys", "turnover"]:
+            # Устанавливаем значения по умолчанию
+            self.app.accounts_without_subaccount = self.config.get("accounts_without_subaccount",
+                                                              DEFAULT_CONFIG.get("accounts_without_subaccount", {}))
+            yield Container(
+                Static(
+                    "Отметьте корр.счета¹, по которым не нужна расшифровка по суб.счетам",
+                    id="static-settings-register-modal"
+                ),
+                
+                VerticalScroll(
+                    SelectionList(id="selection-list-settings-modal"),
+                    id="scrollable-selection-list"
+                ),
+                
+                Static(
+                    "¹нужно изменить список? см. Контакты",
+                    id="static_help-settings-modal"
+                ),
+                
+                Horizontal(
+                    Button("Сохранить", variant="success", id="button-save-settings-modal", classes='buttons-settings-modal'),
+                    Button("Отмена", variant="primary", id="button-cancel-settings-modal", classes='buttons-settings-modal'),
+                    id="horizontals-button-settings-register-modal"
+                ),
+                
+                id="container-settings-screen-modal"
+            )
+            yield Footer(show_command_palette=False)
         
-        # Устанавливаем значения по умолчанию
-        self.app.accounts_without_subaccount = config.get("accounts_without_subaccount",
-                                                          DEFAULT_CONFIG.get("accounts_without_subaccount", {}))
-        yield Container(
-            Static(
-                "Отметьте корр.счета¹, по которым не нужна расшифровка по суб.счетам",
-                id="static-settings-register-modal"
-            ),
+        elif self.app.register in ["generalosv"]:
+            keep_subaccounts = self.config.get("keep_subaccounts", DEFAULT_CONFIG.get("keep_subaccounts", True))
             
-            VerticalScroll(
-                SelectionList(id="selection-list-settings-modal"),
-                id="scrollable-selection-list"
-            ),
-            
-            Static(
-                "¹нужно изменить список? см. Контакты",
-                id="static_help-settings-modal"
-            ),
-            
-            Horizontal(
-                Button("Сохранить", variant="success", id="button-save-settings-modal", classes='buttons-settings-modal'),
-                Button("Отмена", variant="primary", id="button-cancel-settings-modal", classes='buttons-settings-modal'),
-                id="horizontals-button-settings-register-modal"
-            ),
-            
-            id="container-settings-screen-modal"
-        )
-        yield Footer(show_command_palette=False)
+            yield Container(
+                Horizontal(
+                    Static("Только субсчета нижнего уровня:", classes="statics-settings-modal"),
+                    Switch(value=keep_subaccounts, id='switch-keep-subaccounts', classes="switchs-settings-modal"),
+                    id='horizontal-general-header-settings-modal'
+                    ),
+                Horizontal(
+                    Button("Сохранить", variant="success", id='button-save-settings-modal'),
+                    id="horizontals-button-settings-modal"),
+                id="container-settings-modal",
+            )
     
     def on_mount(self) -> None:
-        self.query_one(SelectionList).clear_options()
-        self.query_one(SelectionList).add_options([tuple(item) for item in self.app.accounts_without_subaccount])
+        if self.app.register in ["analisys", "turnover"]:
+            self.query_one(SelectionList).clear_options()
+            self.query_one(SelectionList).add_options([tuple(item) for item in self.app.accounts_without_subaccount])
+        elif self.app.register in ["generalosv"]:   
+            self.query_one('#container-settings-modal').tooltip = 'Если включено, в отчете будут показаны только счета, не имеющие дочерних субсчетов (например, только 60.01.1, но не 60, 60.01, 60.01.1).'
         
     def on_button_pressed(self, event: Button.Pressed):
         """Обрабатывает нажатие кнопки "Сохранить"."""
         if event.button.id == "button-save-settings-modal":
-                       
-            selected_values = self.query_one(SelectionList).selected
-            selected_set = set(selected_values)
-            
-            # Обновляем словарь
-            for account in self.app.accounts_without_subaccount:
-                account_code = account[0]  # первый элемент - код счета
-                account[2] = 1 if account_code in selected_set else 0
-            
-            updates={"accounts_without_subaccount": self.app.accounts_without_subaccount}
+            if self.app.register in ["analisys", "turnover"]:           
+                selected_values = self.query_one(SelectionList).selected
+                selected_set = set(selected_values)
+                
+                # Обновляем словарь
+                for account in self.app.accounts_without_subaccount:
+                    account_code = account[0]  # первый элемент - код счета
+                    account[2] = 1 if account_code in selected_set else 0
+                
+                updates={"accounts_without_subaccount": self.app.accounts_without_subaccount}
+            elif self.app.register in ["generalosv"]:
+                keep_subaccounts = bool(self.query_one('#switch-keep-subaccounts', Switch).value)
+                updates={"keep_subaccounts": keep_subaccounts}
             # Обновляем конфигурацию
             update_config(updates=updates)
             
@@ -179,7 +202,7 @@ class RegisterScreen(Screen):
                                   can_focus=False # Отключаем возможность фокуса
                                   ) 
         yield Horizontal(
-            Input(placeholder="Перетащите .xlsx файл регистра или папку c .xlsx файлами регистров в окно программы и нажмите Enter.",
+            Input(placeholder="Укажите путь: перетащите файл/папку в окно программы или вставьте из буфера (Ctrl+V)",
                   tooltip="Окно программы должно быть активным.",
                   type="text",
                   id='path_register',
@@ -197,14 +220,14 @@ class RegisterScreen(Screen):
         self.query_one("#path_register").focus()
 
     def action_open_settings(self):
-        if self.app.register not in ["analisys", "turnover"]:
+        if self.app.register not in ["analisys", "turnover", "generalosv"]:
             self.notify(
                 "Настройки недоступны для этого типа регистра",
                 severity="warning",
                 timeout=3
             )
             return
-        self.app.push_screen(SettingsScreenRegister())
+        self.app.push_screen(SettingsScreenRegister(register_type=self.app.register))
     
     def on_input_submitted(self, event: Input.Submitted) -> None:
         """Обработчик нажатия enter в поле ввода"""
@@ -274,7 +297,6 @@ class RegisterScreen(Screen):
         self.app.contact_visibility = 1
         
     def key_escape(self):
-        print('Нажали escape!!!')
         self.app.contact_visibility = 1
 
 class SettingsScreen(ModalScreen):

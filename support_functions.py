@@ -14,8 +14,8 @@ import re, os
 import pandas as pd
 from typing import Optional
 from itertools import product
-import openpyxl
-import tempfile
+# import openpyxl
+# import tempfile
 
 from custom_errors import IncorrectFolderOrFilesPath
 # Глобальные константы
@@ -58,7 +58,8 @@ DEFAULT_CONFIG = {
     ],
     "general_settings": {
         "parallel_processing": False
-    }
+    },
+    "keep_subaccounts": False # True оставлять все субсчета (включая промежуточные)
 }
 
 # Добавляем функцию для очистки кэша, чтобы можно было перечитать конфиг
@@ -445,9 +446,15 @@ def get_accounts_without_subaccount() -> List[str]:
                                                           DEFAULT_CONFIG.get("accounts_without_subaccount", {}))
     return [i[0] for i in accounts_without_subaccount if i[2]==1]
 
-# КоррСчета, субсчета по которым не включаем в итоговые файлы, оставляем только счета
+# Получить настройку - паралельная обработка или последовательная
 def get_parallel_processing_option() -> bool:
     config = read_config()
     general_options = config.get("general_settings", DEFAULT_CONFIG.get("general_settings", {}))
     parallel_processing_option = bool(general_options.get("parallel_processing", 0))
     return parallel_processing_option
+
+# Получить настройку для общей ОСВ - показываем все счета или только самого глубокого уровня
+def get_keep_subaccounts() -> bool:
+    config = read_config()
+    keep_subaccounts = config.get("keep_subaccounts", DEFAULT_CONFIG.get("keep_subaccounts", True))
+    return keep_subaccounts
