@@ -199,25 +199,48 @@ class GeneralOSV_UPPFileProcessor(BaseOSVFileProcessor):
 
         new_cols = list(df.columns)
         new_cols[col_index_name_acc] = 'Наименование'
-
-        def find_column_index(cols, df, start_idx, word):
-            for idx in range(start_idx + 1, len(cols)):
-                if df.iloc[0, idx] == word:
-                    return idx
-            return None
-
+        # def find_column_index(cols, df, start_idx, word):
+        #     for idx in range(start_idx + 1, len(cols)):
+        #         if df.iloc[0, idx] == word:
+        #             return idx
+        #     return None
+        def find_column_index(df, start_idx, word):
+            # 1. Берем срез первой строки от нужной позиции
+            row_slice = df.iloc[0, start_idx + 1:]
+            
+            # 2. Метод eq() безопасно сравнит все значения. 
+            # Если встретится pd.NA, он просто вернет False, без ошибок.
+            mask = row_slice.eq(word)
+            
+            # 3. Если совпадение нашлось
+            if mask.any():
+                # mask.argmax() вернет позиционный индекс первого True внутри среза.
+                # Нам нужно прибавить сдвиг (start_idx + 1), чтобы получить абсолютный индекс в df
+                return (start_idx + 1) + mask.argmax()
+                
+            return None        
         new_cols[target_idx_a] = 'Дебет_начало'
-        cred_start_idx = find_column_index(cols, df, target_idx_a, 'Кредит')
+        cred_start_idx = find_column_index(df, target_idx_a, 'Кредит')
+        # cred_start_idx = find_column_index(cols, df, target_idx_a, 'Кредит')
         if cred_start_idx is not None:
             new_cols[cred_start_idx] = 'Кредит_начало'
-
+        
+        
+        
         new_cols[target_idx_b] = 'Дебет_оборот'
-        cred_turn_idx = find_column_index(cols, df, target_idx_b, 'Кредит')
+        cred_turn_idx = find_column_index(df, target_idx_b, 'Кредит')
+        # cred_turn_idx = find_column_index(cols, df, target_idx_b, 'Кредит')
+        
+        
+        
         if cred_turn_idx is not None:
             new_cols[cred_turn_idx] = 'Кредит_оборот'
-
+        
+        
+        
         new_cols[target_idx_c] = 'Дебет_конец'
-        cred_end_idx = find_column_index(cols, df, target_idx_c, 'Кредит')
+        cred_end_idx = find_column_index(df, target_idx_c, 'Кредит')
+        # cred_end_idx = find_column_index(cols, df, target_idx_c, 'Кредит')
         if cred_end_idx is not None:
             new_cols[cred_end_idx] = 'Кредит_конец'
 
