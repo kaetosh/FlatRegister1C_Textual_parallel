@@ -11,8 +11,9 @@ from __future__ import annotations
 
 import pytest
 
-from file_handler import FileHandler, FileProcessorFactory
 from flatregister.errors import FileFailure
+from flatregister.pipeline.factory import FileProcessorFactory
+from flatregister.pipeline.handler import FileHandler
 from tests import factories
 
 
@@ -154,7 +155,7 @@ def test_параллельный_воркер_даёт_тот_же_резуль
     """
     import pandas as pd
 
-    from file_handler import _process_file_parallel
+    from flatregister.pipeline.parallel import _process_file_parallel
 
     path = factories.accountosv_upp(out_dir / "ООО Ромашка.xlsx")
 
@@ -174,7 +175,7 @@ def test_параллельный_воркер_даёт_тот_же_резуль
 
 def test_отказ_в_параллельном_воркере_возвращается_файлом_а_не_строкой(out_dir):
     """Воркер не бросает исключения: их не пережить границу процессов."""
-    from file_handler import _process_file_parallel
+    from flatregister.pipeline.parallel import _process_file_parallel
 
     broken = out_dir / "мусор.xlsx"
     broken.write_bytes(b"not a zip archive")
@@ -199,7 +200,7 @@ def test_воркер_пригоден_для_передачи_в_дочерни
     """
     import pickle
 
-    from file_handler import _process_file_parallel
+    from flatregister.pipeline.parallel import _process_file_parallel
 
     assert pickle.loads(pickle.dumps(_process_file_parallel)) is _process_file_parallel
 

@@ -27,6 +27,6 @@
 ## Ошибки и улучшения
 Обратите внимание, что алгоритм скрипта не может учесть все особенности различных вариаций выгрузок Регистров из 1С, что может привести к ошибкам в работе программы. Если вы столкнулись с какими-либо ошибками или хотите предложить улучшения, пожалуйста, отправьте информацию об ошибках (вместе с образцами выгрузок Регистров из 1С, которые не были корректно обработаны программой) или предложения по улучшению по контакту в телеграм @kaetosh.
 ## Создание .exe файла с помощью nuitka (python 3.13)
-используйте команду: `nuitka --standalone --include-data-file="style.tcss=style.tcss" --include-package=rich --include-package=rich._unicode_data main.py`
+используйте команду: `nuitka --standalone --include-data-file="style.tcss=style.tcss" --include-package=flatregister --include-package=ui --include-package=rich --include-package=rich._unicode_data main.py`
 ## Готовая сборка доступна по адресу:
 https://disk.yandex.ru/d/1SCkBNBGMZcb3Q

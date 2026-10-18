@@ -6,7 +6,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from register_processors.generalosv_processor import GeneralOSV_NonUPPFileProcessor, GeneralOSV_UPPFileProcessor
+from flatregister.registers.general_osv import GeneralOSV_NonUPPFileProcessor, GeneralOSV_UPPFileProcessor
 
 REGISTER = "generalosv"
 

@@ -15,7 +15,8 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from support_functions import DEFAULT_CONFIG, clear_config_cache, read_config, sort_columns, update_config
+from flatregister.column_order import sort_columns
+from flatregister.config import DEFAULT_CONFIG, clear_config_cache, read_config, update_config
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
@@ -69,7 +70,7 @@ def test_настройки_сохраняются(isolated_config):
 def test_неизвестный_тип_файла_понятен():
     """Ошибка чтения пути говорит по-русски и подсказывает, что делать."""
     from flatregister.errors import InputPathError
-    from support_functions import validate_paths
+    from flatregister.excel_io import validate_paths
 
     with pytest.raises(InputPathError) as caught:
         validate_paths([Path("Z:/нет/такой/папки")])

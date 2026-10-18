@@ -11,7 +11,7 @@
 * **Точка входа:** `main.py:572-574` → `FlatRegister1CApp().run()`. Запуск: `python main.py` из корня проекта.
 * **GUI:** Textual 8.0.0, стили — `style.tcss` (`main.py:473`). Не tkinter/Qt: логика пишется как `Screen`/`ModalScreen` с `compose()`/`on_*`-хендлерами, тяжёлая работа — через `@work(thread=True)`.
 * **Зависимости:** `requirements.txt` — pandas **3.0.1**, openpyxl 3.1.5, xlwings 0.33.20, pywin32, textual 8.0.0, rich, Nuitka 4.0.1. Нужен **установленный Excel** (xlings работает только через COM).
-* **Сборка в .exe:** `nuitka --standalone --include-data-file="style.tcss=style.tcss" --include-package=rich --include-package=rich._unicode_data main.py` (README). Не забудь `--include-data-file` для `style.tcss`, `config.json` и текстов.
+* **Сборка в .exe:** `nuitka --standalone --include-data-file="style.tcss=style.tcss" --include-package=flatregister --include-package=ui --include-package=rich --include-package=rich._unicode_data main.py` (README). Не забудь `--include-data-file` для `style.tcss`, `config.json` и текстов.
 * **Тестов нет.** Единственная проверка — прогон на реальной выгрузке 1С и сверка с ручным расчётом. Компиляция (`python -m py_compile`) — не проверка логики.
 
 ## Поток обработки

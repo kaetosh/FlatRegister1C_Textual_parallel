@@ -19,7 +19,7 @@ import json
 
 import pytest
 
-from register_processors.class_processor import FileProcessor
+from flatregister.registers.base import FileProcessor
 from tests import factories
 
 #: Настройки, дающие однозначный результат: субсчета склеиваются, а
@@ -39,7 +39,7 @@ def isolated_config(tmp_path, monkeypatch):
                            encoding="utf-8")
     monkeypatch.chdir(tmp_path)
 
-    from support_functions import clear_config_cache
+    from flatregister.config import clear_config_cache
 
     clear_config_cache()
     yield config_path
@@ -81,7 +81,7 @@ def accountosv_non_upp_file(out_dir):
 @pytest.fixture
 def accountosv_upp_processed(accountosv_upp_file):
     """Готовый результат УПП-ОСВ — чтобы не прогонять обработку ради колонок."""
-    from register_processors.accountosv_processor import AccountOSV_UPPFileProcessor
+    from flatregister.registers.account_osv import AccountOSV_UPPFileProcessor
     return AccountOSV_UPPFileProcessor().process_file(accountosv_upp_file)
 
 
@@ -227,7 +227,7 @@ def без_excel(monkeypatch):
     Настоящая ветка xlwings проверяется отдельно — с маркером
     ``requires_excel`` на живой машине с установленным Excel.
     """
-    import register_processors.class_processor as class_processor
+    import flatregister.registers.base as class_processor
 
     monkeypatch.setattr(class_processor, "xw", _StubXw)
     # Пауза в полсекунды нужна ради COM, в тестах она только тянет время.

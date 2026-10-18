@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 
-from register_processors.turnover_processor import Turnover_NonUPPFileProcessor, Turnover_UPPFileProcessor
+from flatregister.registers.turnover import Turnover_NonUPPFileProcessor, Turnover_UPPFileProcessor
 
 REGISTER = "turnover"
 

@@ -11,10 +11,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from flatregister.config import get_keep_subaccounts
 from flatregister.dtypes import ensure_column_types, to_numeric
 from flatregister.errors import RegisterEmptyError, RegisterNotRecognizedError, RegisterStructureError
-from register_processors.class_processor import FileProcessor
-from support_functions import fix_1c_excel_case, get_keep_subaccounts
+from flatregister.excel_io import fix_1c_excel_case
+from flatregister.registers.base import FileProcessor
 
 
 def pivot_hierarchy_to_columns(df, separator='_'):

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from register_processors.analisys_processor import Analisys_NonUPPFileProcessor, Analisys_UPPFileProcessor
+from flatregister.registers.analysis import Analisys_NonUPPFileProcessor, Analisys_UPPFileProcessor
 
 REGISTER = "analisys"
 

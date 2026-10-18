@@ -11,7 +11,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from register_processors.class_processor import FileProcessor
+from flatregister.registers.base import FileProcessor
 
 
 def _is_account(values):

@@ -17,8 +17,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from flatregister.errors import FileFailure, RegisterEmptyError, RegisterNotRecognizedError, describe_exception
+from flatregister.excel_io import generate_failed_processing_markdown
 from flatregister.logging_setup import get_log_path, log_failure, setup_logging
-from support_functions import generate_failed_processing_markdown
 
 failures = []
 
@@ -87,7 +87,7 @@ check("пустой список даёт пустую строку", generate_f
 
 print()
 print("6. Сквозной путь: мусорный .xlsx в папке не роняет пакетную обработку")
-from file_handler import FileHandler  # импорт после проверок: тяжёлый
+from flatregister.pipeline.handler import FileHandler  # импорт после проверок: тяжёлый
 
 with tempfile.TemporaryDirectory() as tmp:
     folder = Path(tmp)
@@ -123,7 +123,7 @@ with tempfile.TemporaryDirectory() as tmp:
 print()
 print("7. Ошибка пути — понятный текст, а не 'путь не найден'")
 from flatregister.errors import InputPathError
-from support_functions import validate_paths
+from flatregister.excel_io import validate_paths
 
 try:
     validate_paths([Path("Z:/нет/такой/папки")])

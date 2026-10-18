@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import pytest
 
-from register_processors.card_processor import Card_NonUPPFileProcessor, Card_UPPFileProcessor
-from register_processors.posting_processor import Posting_NonUPPFileProcessor, Posting_UPPFileProcessor
+from flatregister.registers.card import Card_NonUPPFileProcessor, Card_UPPFileProcessor
+from flatregister.registers.posting import Posting_NonUPPFileProcessor, Posting_UPPFileProcessor
 
 
 @pytest.mark.parametrize("processor_class,file_name", [

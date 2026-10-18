@@ -14,8 +14,8 @@ import pandas as pd
 
 from flatregister.dtypes import ensure_column_types, to_numeric
 from flatregister.errors import RegisterEmptyError, RegisterNotRecognizedError, RegisterStructureError
-from register_processors.class_processor import FileProcessor
-from support_functions import fix_1c_excel_case
+from flatregister.excel_io import fix_1c_excel_case
+from flatregister.registers.base import FileProcessor
 
 
 class Card_UPPFileProcessor(FileProcessor):

@@ -67,7 +67,7 @@ uv run pytest                 # ожидается 102 passed, 2 xfailed
 
 ## Статус
 
-- **Текущая сессия:** S4 — закрыта. Следующая: **S5 (Переезд в пакет)**
+- **Текущая сессия:** S5 — закрыта. Следующая: **S6 (Общие примитивы)**
 - **Ветка:** `refactor/s0-safety-net`
 - **Baseline: СНЯТ** на 178 реальных выгрузках, два набора:
   - `tools/baseline_gaz.json` — 112 файлов, все шесть регистров, 117 с
@@ -133,9 +133,8 @@ uv run python tools\regress.py --compare tools\baseline.json tools\after.json
 | S1 | Ошибки и логирование | **закрыта** |
 | S3 | Типы данных | **закрыта** |
 | S4 | Мусор | **закрыта** |
-| S5 | Переезд в пакет | **следующая** |
-| S5 | Переезд в пакет | не начата |
-| S6 | Общие примитивы | не начата |
+| S5 | Переезд в пакет | **закрыта** |
+| S6 | Общие примитивы | **следующая** |
 | S7 | УПП / не-УПП | не начата |
 | S8 | Пайплайн и конфиг | не начата |
 | S9 | Документация и финал | не начата |
@@ -247,14 +246,17 @@ uv run python tools\regress.py --compare tools\baseline.json tools\after.json
 
 Целевая структура — в разделе «Целевая архитектура» ниже.
 
-- [ ] создать `flatregister/` (`errors`, `config`, `excel_io`, `column_order`, `hierarchy`,
+- [x] создать `flatregister/` (`errors`, `config`, `excel_io`, `column_order`, `hierarchy`,
       `pipeline/`, `registers/`)
-- [ ] создать `ui/` (`app`, `screens`, `widgets`), вынести из `main.py`
-- [ ] `main.py` остаётся точкой входа
-- [ ] обновить команду Nuitka: `--include-package=flatregister --include-package=ui`
-- [ ] обновить `tools/regress.py`
+- [x] создать `ui/` (`app`, `screens`, `widgets`), вынести из `main.py`
+- [x] `main.py` остаётся точкой входа
+- [x] обновить команду Nuitka: `--include-package=flatregister --include-package=ui`
+      (README.md, AGENTS.md)
+- [x] обновить `tools/regress.py`
 
-**Критерий готовности:** `python main.py` поднимается; baseline не изменился.
+**Критерий готовности:** выполнен — `python main.py` поднимается (`import main` OK,
+`smoke_ui` зелёный); обе регрессии: регрессий **0**; `ruff` чист; `pytest` —
+103 passed, 1 xfailed (как до переезда).
 
 ### S6 — Общие примитивы
 
@@ -327,7 +329,7 @@ uv run python tools\regress.py --compare tools\baseline.json tools\after.json
 | D5 | `analisys_processor.py` | Обработка количества/валюты: в УПП `_КОЛ` и `_ВАЛ` могут сосуществовать, в не-УПП ветки взаимоисключающие (`elif`) | не решено |
 | D6 | `analisys_processor.py` | Механизм досчёта строк `find_sum_indices` + `reconciliation_interim_results` (~90 строк) есть только в УПП | не решено |
 | D7 | `posting_processor.py` | Валюта в УПП = код + количество, в не-УПП = код + **валютное** количество — разные метрики в одном имени колонки | не решено |
-| D8 | `.exe`-сборка | Требуется ли поддержка сборки Nuitka после переезда в пакет? | не решено |
+| D8 | `.exe`-сборка | Требуется ли поддержка сборки Nuitka после переезда в пакет? | команда обновлена в S5 (`--include-package=flatregister --include-package=ui`), сама сборка .exe не проверялась |
 
 ---
 
@@ -368,6 +370,60 @@ text.py  style.tcss  requirements.txt  # не трогаем
 ## Лог сессий
 
 _(записи добавляются снизу вверх)_
+
+### S5 — Переезд в пакет (2026-10-18)
+
+**Сделано**
+
+Весь код переехал в `flatregister/` + `ui/`, `main.py` стал тонкой обёрткой.
+Поведение не менялось — обе регрессии по реальным выгрузкам дают 0 регрессий.
+
+- `git mv` с сохранением истории: `card_processor.py→registers/card.py`,
+  `posting_processor.py→registers/posting.py`, `analisys_processor.py→registers/analysis.py`,
+  `turnover_processor.py→registers/turnover.py`, `accountosv_processor.py→registers/account_osv.py`,
+  `generalosv_processor.py→registers/general_osv.py`, `class_processor.py→registers/base.py`
+- `support_functions.py` разобран на `config.py`, `excel_io.py`, `column_order.py`;
+  файл удалён
+- `file_handler.py` разобран на `pipeline/{factory,parallel,result_collector,handler}.py`;
+  файл удалён
+- `main.py` разобран на `ui/{app,screens,widgets}.py`; `main.py` = импорт + `run()`
+- `hierarchy.py` — `is_accounting_code` / `shift_levels` / `max_level_column` вынесены
+  из методов `FileProcessor`; в `registers/base.py` оставлены одноимённые
+  делегирующие методы, чтобы подклассы не переписывать (S6 доработает)
+
+**Ловушки, на которые наткнулись**
+
+1. **`CSS_PATH` уезжает.** Textual ищет CSS относительно файла, где объявлен класс
+   приложения, а не от CWD. После переезда `FlatRegister1CApp` в `ui/app.py`
+   `style.tcss` искался в `ui/style.tcss`. Лечится абсолютным путём
+   `Path(__file__).resolve().parent.parent / "style.tcss"` — сам файл остался
+   в корне, как требует Nuitka.
+2. **`FileHandler._open_file` нужен как атрибут класса.** `tests/test_pipeline.py`
+   патчит `FileHandler._open_file` (monkeypatch). Поэтому в `pipeline/handler.py`
+   оставлена строка-делегат `_open_file = staticmethod(open_file)`, а не просто
+   удалённый метод.
+3. **`is_valid_dragged_path` живёт в `excel_io`, не в `config`** — при переносе
+   импортов в `ui/screens.py` перепутал модуль; поймала только `smoke_ui`.
+4. **`RegisterScreen` ссылался на модульную глобальную `app`.** В `main.py` это
+   была ссылка на экземпляр; после разреза глобали нет — заменено на `self.app`
+   (в рантайме это тот же объект).
+5. **`clear_console` удалён** из `excel_io.py` — мёртвая функция, у неё не было
+   ни одного импортёра.
+
+**Проверка**
+
+| Проверка | Результат |
+|---|---|
+| `uv run ruff check .` | 0 замечаний |
+| `uv run pytest` | 103 passed, 1 xfailed, ~8.5 с |
+| `uv run python tools\smoke_errors.py` | зелёный, exit 0 |
+| `uv run python tools\smoke_ui.py` | зелёный, exit 0 |
+| `regress.py --root __ВЫГРУЗКИ_ГАЗ` + `--assert-no-regression` | 112 файлов, регрессий **0** |
+| `regress.py --root Для фикса Обработчиув регистров` + `--assert-no-regression` | 66 файлов, регрессий **0** |
+| `python -c "import main"` | OK |
+
+Каталоги выгрузок (вне проекта, в `Yandex.Disk\automation_processing_1C\1С\`):
+`__ВЫГРУЗКИ_ГАЗ` (112 xlsx), `Для фикса Обработчиув регистров` (66 xlsx).
 
 ### S3 — Типы данных (2026-10-18)
 

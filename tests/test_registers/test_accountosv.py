@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pytest
 
-from register_processors.accountosv_processor import AccountOSV_NonUPPFileProcessor, AccountOSV_UPPFileProcessor
+from flatregister.registers.account_osv import AccountOSV_NonUPPFileProcessor, AccountOSV_UPPFileProcessor
 
 REGISTER = "accountosv"
 
@@ -61,7 +61,7 @@ def test_осв_счёта_упп_берёт_номер_счёта_из_заго
     """
     import pandas as pd
 
-    from register_processors.accountosv_processor import find_account_from_text
+    from flatregister.registers.account_osv import find_account_from_text
 
     frame = pd.DataFrame({"a": ["Оборотно-сальдовая ведомость по счету 60.01"], "b": [1]})
     assert find_account_from_text(frame) == "60.01"

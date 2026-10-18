@@ -20,7 +20,8 @@ if str(ROOT) not in sys.path:
 
 from flatregister.errors import FileFailure, RegisterEmptyError, describe_exception
 from flatregister.logging_setup import setup_logging
-from main import FlatRegister1CApp, ResultProcessingDirectotyScreen
+from main import FlatRegister1CApp
+from ui.screens import ResultProcessingDirectotyScreen
 
 setup_logging()
 

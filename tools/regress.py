@@ -50,9 +50,10 @@ if str(ROOT) not in sys.path:
 
 import pandas as pd
 
-from file_handler import FileProcessorFactory
+from flatregister.config import clear_config_cache
 from flatregister.errors import describe_exception
-from support_functions import clear_config_cache, fix_1c_excel_case
+from flatregister.excel_io import fix_1c_excel_case
+from flatregister.pipeline.factory import FileProcessorFactory
 
 # Порог, начиная с которого расхождение сумм считается настоящим.
 # Нули и -0.0 после округления до целых — обычное дело, а не тревога.

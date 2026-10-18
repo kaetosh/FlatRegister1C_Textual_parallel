@@ -10,10 +10,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from flatregister.config import get_accounts_without_subaccount
 from flatregister.dtypes import ensure_column_types, numeric_total
 from flatregister.errors import RegisterEmptyError, RegisterNotRecognizedError, RegisterStructureError
-from register_processors.class_processor import FileProcessor, exclude_values
-from support_functions import fix_1c_excel_case, get_accounts_without_subaccount
+from flatregister.excel_io import fix_1c_excel_case
+from flatregister.registers.base import FileProcessor, exclude_values
 
 
 class Turnover_UPPFileProcessor(FileProcessor):
