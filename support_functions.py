@@ -22,6 +22,30 @@ from custom_errors import IncorrectFolderOrFilesPath
 MAX_EXCEL_ROWS = 1_000_000
 COLUMN_PREFIXES = ('Операция_', 'Содержание_', 'Документ_', 'Аналитика Дт_', 'Субконто Дт_', 'Аналитика Кт_', 'Субконто Кт_', 'Level_')
 
+MONEY_COLUMNS = ('Дебет_начало', 'Кредит_начало', 'Дебет_оборот',
+                 'Кредит_оборот', 'Дебет_конец', 'Кредит_конец')
+
+
+def numeric_total(df: pd.DataFrame, columns: Iterable[str]) -> float:
+    """
+    Сумма числовых значений по перечисленным колонкам. Отсутствующие колонки дают 0.
+
+    Заменяет конструкцию df[cols].sum().sum(), которая на pandas 3 падает:
+    колонка, где все значения пустые, получает dtype 'str', и DataFrame.sum()
+    возвращает по ней строку '0' вместо числа. Повторное сложение даёт
+    TypeError: can only concatenate str (not "float") to str.
+    """
+    if df is None or df.empty:
+        return 0.0
+
+    present = [col for col in columns if col in df.columns]
+    if not present:
+        return 0.0
+
+    numeric = df[present].apply(pd.to_numeric, errors='coerce')
+    return float(numeric.sum().sum())
+
+
 # Глобальная переменная для кэширования конфигурации
 _config_cache: Dict[str, Any] = {}
 CONFIG_FILE_PATH = "config.json"

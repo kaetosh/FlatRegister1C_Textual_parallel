@@ -906,7 +906,7 @@ from typing import Tuple, Optional
 
 from register_processors.class_processor import FileProcessor, exclude_values
 from custom_errors import RegisterProcessingError
-from support_functions import fix_1c_excel_case
+from support_functions import fix_1c_excel_case, numeric_total, MONEY_COLUMNS
 
 
 def find_account_from_text(df: pd.DataFrame, search_text: str = "Оборотно-сальдовая ведомость по счету ") -> Optional[str]:
@@ -1061,11 +1061,7 @@ class BaseAccountOSVProcessor(FileProcessor):
     def _validate_empty_osv(self, df: pd.DataFrame) -> None:
         """Проверка на пустую ОСВ"""
         if df['Уровень'].max() == 0:
-            check_columns = ['Дебет_начало', 'Кредит_начало', 'Дебет_оборот', 
-                           'Кредит_оборот', 'Дебет_конец', 'Кредит_конец']
-            check_columns = [col for col in check_columns if col in df.columns]
-            
-            if df[check_columns].sum().sum() == 0:
+            if numeric_total(df, MONEY_COLUMNS) == 0:
                 raise RegisterProcessingError('ОСВ счета вероятно пустая.')
             else:
                 df.loc[:, 'Уровень'] = 1
@@ -1324,6 +1320,14 @@ class AccountOSV_UPPFileProcessor(BaseAccountOSVProcessor):
         
         
         
+        # Удаление строк без числовых данных (например, "Ответственный:" под таблицей).
+        # Это необходимо для корректной обработки одно-строчных выгрузок (только "Итого"):
+        # без этого хвост выгрузки даёт len(df) > 1, и ветка ниже выбрасывает
+        # 'Итого' как промежуточный итог, хотя он единственный несёт суммы.
+        numeric_cols_for_filter = [col for col in MONEY_COLUMNS if col in df.columns]
+        if numeric_cols_for_filter:
+            df = df[df[numeric_cols_for_filter].notna().any(axis=1)].copy()
+        
         # Удаление строк с Итого и exclude_values
         if len(df) > 1:
             df = df[~df['Субконто'].str.contains('Итого')]
@@ -1342,6 +1346,7 @@ class AccountOSV_UPPFileProcessor(BaseAccountOSVProcessor):
                     
 
         else:
+            # Субсчетов нет: 'Итого' здесь не дублирующий итог, а сами данные счёта.
             first_index = df.index[0]
             if df.loc[first_index, 'Субконто'] == 'Итого' and account_for_table:
                 df.loc[first_index, 'Субконто'] = account_for_table

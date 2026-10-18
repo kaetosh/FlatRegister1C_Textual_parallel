@@ -11,7 +11,7 @@ from pathlib import Path
 
 from register_processors.class_processor import FileProcessor, exclude_values
 from custom_errors import RegisterProcessingError
-from support_functions import fix_1c_excel_case, get_accounts_without_subaccount
+from support_functions import fix_1c_excel_case, get_accounts_without_subaccount, numeric_total
 
 
 class Turnover_UPPFileProcessor(FileProcessor):
@@ -439,7 +439,7 @@ class Turnover_UPPFileProcessor(FileProcessor):
         df_check_after_process = pd.DataFrame({
             'Сальдо_начало_после_обработки': [get_col_or_zeros(df, start_debit).sum() - get_col_or_zeros(df, start_credit).sum()],
             # 'Оборот_после_обработки': [get_col_or_zeros(df, debit_turnover).sum() - get_col_or_zeros(df, credit_turnover).sum()],
-            'Оборот_после_обработки': [df[filtered_cols_do].sum().sum() - df[filtered_cols_ko].sum().sum()],
+            'Оборот_после_обработки': [numeric_total(df, filtered_cols_do) - numeric_total(df, filtered_cols_ko)],
             'Сальдо_конец_после_обработки': [get_col_or_zeros(df, end_debit).sum() - get_col_or_zeros(df, end_credit).sum()]
         })
 
@@ -854,7 +854,7 @@ class Turnover_NonUPPFileProcessor(FileProcessor):
         df_check_after_process = pd.DataFrame({
             'Сальдо_начало_после_обработки': [get_col_or_zeros(df, start_debit).sum() - get_col_or_zeros(df, start_credit).sum()],
             # 'Оборот_после_обработки': [get_col_or_zeros(df, debit_turnover).sum() - get_col_or_zeros(df, credit_turnover).sum()],
-            'Оборот_после_обработки': [df[filtered_cols_do].sum().sum() - df[filtered_cols_ko].sum().sum()],
+            'Оборот_после_обработки': [numeric_total(df, filtered_cols_do) - numeric_total(df, filtered_cols_ko)],
             'Сальдо_конец_после_обработки': [get_col_or_zeros(df, end_debit).sum() - get_col_or_zeros(df, end_credit).sum()]
         })
 
