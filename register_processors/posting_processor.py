@@ -10,11 +10,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from flatregister.dtypes import ensure_column_types, to_numeric
 from flatregister.errors import RegisterEmptyError, RegisterStructureError
 from register_processors.class_processor import FileProcessor
 from support_functions import fix_1c_excel_case
-
-pd.set_option('future.no_silent_downcasting', True)
 
 
 class Posting_UPPFileProcessor(FileProcessor):
@@ -58,11 +57,11 @@ class Posting_UPPFileProcessor(FileProcessor):
         kt_idx = df_with_count.columns.get_loc('Кт')
         
         # Преобразование в числовые типы
-        dt_col = pd.to_numeric(df_with_count.iloc[:, dt_idx], errors='coerce').fillna(0)
-        dt_next_col = pd.to_numeric(df_with_count.iloc[:, dt_idx + 1], errors='coerce').fillna(0)
+        dt_col = to_numeric(df_with_count.iloc[:, dt_idx], fill_zero=True)
+        dt_next_col = to_numeric(df_with_count.iloc[:, dt_idx + 1], fill_zero=True)
         
-        kt_col = pd.to_numeric(df_with_count.iloc[:, kt_idx], errors='coerce').fillna(0)
-        kt_next_col = pd.to_numeric(df_with_count.iloc[:, kt_idx + 1], errors='coerce').fillna(0)
+        kt_col = to_numeric(df_with_count.iloc[:, kt_idx], fill_zero=True)
+        kt_next_col = to_numeric(df_with_count.iloc[:, kt_idx + 1], fill_zero=True)
         
         # Суммирование
         df_with_count.loc[:, 'Дт_количество'] = dt_col + dt_next_col
@@ -223,7 +222,8 @@ class Posting_UPPFileProcessor(FileProcessor):
         # Удаление пустых строк и столбцов
         result.dropna(how='all', inplace=True)
         result.dropna(how='all', axis=1, inplace=True)
-        
+
+        result = ensure_column_types(result)
         return result, self.table_for_check
     
 
@@ -311,15 +311,15 @@ class Posting_NonUPPFileProcessor(FileProcessor):
                 if not df_with_col.empty:
                     try:
                         dt_idx = df_with_col.columns.get_loc('Дебет')
-                        df_with_col['Дебет_количество'] = pd.to_numeric(
-                            df_with_col.iloc[:, dt_idx + 1], errors='coerce').fillna(0)
+                        df_with_col['Дебет_количество'] = to_numeric(
+                            df_with_col.iloc[:, dt_idx + 1], fill_zero=True)
                     except (KeyError, IndexError):
                         pass
                         
                     try:
                         kt_idx = df_with_col.columns.get_loc('Кредит')
-                        df_with_col['Кредит_количество'] = pd.to_numeric(
-                            df_with_col.iloc[:, kt_idx + 1], errors='coerce').fillna(0)
+                        df_with_col['Кредит_количество'] = to_numeric(
+                            df_with_col.iloc[:, kt_idx + 1], fill_zero=True)
                     except (KeyError, IndexError):
                         pass
                     
@@ -335,16 +335,16 @@ class Posting_NonUPPFileProcessor(FileProcessor):
                     try:
                         dt_idx = df_with_currency.columns.get_loc('Дебет')
                         df_with_currency['Дебет_валюта'] = df_with_currency.iloc[:, dt_idx + 1]
-                        df_with_currency['Дебет_валютное_количество'] = pd.to_numeric(
-                            df_with_currency.iloc[:, dt_idx + 2], errors='coerce').fillna(0)
+                        df_with_currency['Дебет_валютное_количество'] = to_numeric(
+                            df_with_currency.iloc[:, dt_idx + 2], fill_zero=True)
                     except (KeyError, IndexError):
                         pass
                         
                     try:
                         kt_idx = df_with_currency.columns.get_loc('Кредит')
                         df_with_currency['Кредит_валюта'] = df_with_currency.iloc[:, kt_idx + 1]
-                        df_with_currency['Кредит_валютное_количество'] = pd.to_numeric(
-                            df_with_currency.iloc[:, kt_idx + 2], errors='coerce').fillna(0)
+                        df_with_currency['Кредит_валютное_количество'] = to_numeric(
+                            df_with_currency.iloc[:, kt_idx + 2], fill_zero=True)
                     except (KeyError, IndexError):
                         pass
                     
@@ -397,5 +397,6 @@ class Posting_NonUPPFileProcessor(FileProcessor):
             raise RegisterEmptyError(
                 'Отчёт по проводкам пустой.',
                 hint='В выгрузке нет ни одной строки с данными.')
-            
+
+        df = ensure_column_types(df)
         return df, self.table_for_check

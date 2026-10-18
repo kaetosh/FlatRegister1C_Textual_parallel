@@ -18,6 +18,7 @@ import openpyxl
 import pandas as pd
 import xlwings as xw
 
+from flatregister.dtypes import level_columns
 from flatregister.errors import RegisterNotRecognizedError
 
 '''
@@ -392,7 +393,7 @@ class FileProcessor(ABC):
         
 
         if not df.empty:
-            list_lev = [i for i in df.columns.to_list() if 'Level' in i]
+            list_lev = level_columns(df)
             continue_shifting = True
             iteration = 0
             
@@ -442,12 +443,12 @@ class FileProcessor(ABC):
         в методе _is_accounting_code_vectorized.
         """
         # Получаем все столбцы, начинающиеся с 'Level_'
-        level_columns = [col for col in df.columns if col.startswith('Level_')]
+        levels = level_columns(df)
         
         max_level_column = None
         max_index = -1
     
-        for col in level_columns:
+        for col in levels:
             # Проверяем, все ли значения в столбце возвращают True
             if self._is_accounting_code_vectorized(df[col]).all():
                 # Извлекаем индекс из имени столбца

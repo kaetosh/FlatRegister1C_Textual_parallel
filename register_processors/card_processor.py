@@ -12,6 +12,7 @@ from typing import List, Tuple
 import numpy as np
 import pandas as pd
 
+from flatregister.dtypes import ensure_column_types, to_numeric
 from flatregister.errors import RegisterEmptyError, RegisterNotRecognizedError, RegisterStructureError
 from register_processors.class_processor import FileProcessor
 from support_functions import fix_1c_excel_case
@@ -48,7 +49,7 @@ class Card_UPPFileProcessor(FileProcessor):
                 cols_between = df.columns[start_idx + 1 : end_idx]
                 return (
                     df[cols_between]
-                    .apply(lambda x: pd.to_numeric(x, errors='coerce').fillna(0))
+                    .apply(lambda x: to_numeric(x, fill_zero=True))
                     .sum(axis=1)
                 )
             else:
@@ -169,6 +170,7 @@ class Card_UPPFileProcessor(FileProcessor):
         result = result.drop(columns=['Операция'], errors='ignore')
         result.insert(0, 'Имя_файла', os.path.basename(file_path))
 
+        result = ensure_column_types(result)
         return result, self.table_for_check
 
 class Card_NonUPPFileProcessor(FileProcessor):
@@ -211,17 +213,17 @@ class Card_NonUPPFileProcessor(FileProcessor):
                 dt_index = filtered.columns.get_loc('Дебет')
                 if value_filter == 'Кол.':
                     # Пробуем первый столбец
-                    debit_qty = pd.to_numeric(filtered.iloc[:, dt_index + 1], errors='coerce').fillna(0)
+                    debit_qty = to_numeric(filtered.iloc[:, dt_index + 1], fill_zero=True)
                     
                     # Проверяем сумму ВСЕГО столбца
                     if debit_qty.sum() == 0:
                         # Если сумма всех значений в столбце равна 0, берем другой столбец
-                        debit_qty = pd.to_numeric(filtered.iloc[:, dt_index + 2], errors='coerce').fillna(0)
+                        debit_qty = to_numeric(filtered.iloc[:, dt_index + 2], fill_zero=True)
                     
                     result['Дебет_количество'] = debit_qty
                 elif value_filter == 'Вал.':
                     result['Дебет_валюта'] = filtered.iloc[:, dt_index + 1]
-                    result['Дебет_валютное_количество'] = pd.to_numeric(filtered.iloc[:, dt_index + 2], errors='coerce').fillna(0)
+                    result['Дебет_валютное_количество'] = to_numeric(filtered.iloc[:, dt_index + 2], fill_zero=True)
         except (KeyError, IndexError):
             pass
             
@@ -232,19 +234,19 @@ class Card_NonUPPFileProcessor(FileProcessor):
                     
                     
                     # Пробуем первый столбец
-                    credit_qty = pd.to_numeric(filtered.iloc[:, kt_index + 1], errors='coerce').fillna(0)
+                    credit_qty = to_numeric(filtered.iloc[:, kt_index + 1], fill_zero=True)
                     
                     # Проверяем сумму ВСЕГО столбца
                     if credit_qty.sum() == 0:
                         # Если сумма всех значений в столбце равна 0, берем другой столбец
-                        credit_qty = pd.to_numeric(filtered.iloc[:, kt_index + 2], errors='coerce').fillna(0)
+                        credit_qty = to_numeric(filtered.iloc[:, kt_index + 2], fill_zero=True)
                     
                     result['Кредит_количество'] = credit_qty
                     
                     
                 elif value_filter == 'Вал.':
                     result['Кредит_валюта'] = filtered.iloc[:, kt_index + 1]
-                    result['Кредит_валютное_количество'] = pd.to_numeric(filtered.iloc[:, kt_index + 2], errors='coerce').fillna(0)
+                    result['Кредит_валютное_количество'] = to_numeric(filtered.iloc[:, kt_index + 2], fill_zero=True)
         except (KeyError, IndexError):
             pass
         result.reset_index(drop=True, inplace=True)
@@ -309,5 +311,6 @@ class Card_NonUPPFileProcessor(FileProcessor):
                 f'Файл {file_path.name} не является карточкой счёта 1С.',
                 hint='В выгрузке нет ни строки с заголовком «Период», ни данных. '
                      'Похоже, это выгрузка из 1С УПП — выберите другую карточку счёта.')
-        
+
+        df = ensure_column_types(df)
         return df, self.table_for_check

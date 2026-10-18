@@ -10,9 +10,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from flatregister.dtypes import ensure_column_types, numeric_total
 from flatregister.errors import RegisterEmptyError, RegisterNotRecognizedError, RegisterStructureError
 from register_processors.class_processor import FileProcessor, exclude_values
-from support_functions import fix_1c_excel_case, get_accounts_without_subaccount, numeric_total
+from support_functions import fix_1c_excel_case, get_accounts_without_subaccount
 
 
 class Turnover_UPPFileProcessor(FileProcessor):
@@ -470,7 +471,8 @@ class Turnover_UPPFileProcessor(FileProcessor):
 
         # Запись таблицы в хранилище таблиц
         self.table_for_check = pivot_df_check
-        
+
+        df = ensure_column_types(df)
         return df, self.table_for_check
 
         
@@ -899,5 +901,6 @@ class Turnover_NonUPPFileProcessor(FileProcessor):
 
         # Запись таблицы в хранилище таблиц
         self.table_for_check = pivot_df_check
-        
+
+        df = ensure_column_types(df)
         return df, self.table_for_check

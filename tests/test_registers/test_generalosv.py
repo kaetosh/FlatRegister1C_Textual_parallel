@@ -93,17 +93,11 @@ def test_общая_осв_пустая_даёт_понятную_ошибку(o
     assert "пуст" in error.user_message.lower()
 
 
-@pytest.mark.xfail(
-    reason="S3: предобработка собирает кадр из строк со смешанными типами, "
-           "поэтому денежные колонки приходят как object. Именно из-за этого "
-           "существует numeric_total. Починится в Сессии S3.",
-    strict=True,
-)
 def test_общая_осв_денежные_колонки_числовые(generalosv_upp_file):
     """Должны стать числами, а не object.
 
-    strict=True означает: как только тест начнёт проходить, сессия упадёт с
-    сообщением об устаревшем xfail — это сигнал снять метку.
+    До S3 колонки приходили как object, и суммы по ним считались только через
+    numeric_total. Теперь приведение типов делает process_file.
     """
     result, _ = GeneralOSV_UPPFileProcessor().process_file(generalosv_upp_file)
 
@@ -121,7 +115,7 @@ def test_общая_осв_суммы_читаются_несмотря_на_obj
     него сумма падает: именно этим аварийно ловился баг pandas 3 с пустыми
     колонками.
     """
-    from support_functions import MONEY_COLUMNS, numeric_total
+    from flatregister.dtypes import MONEY_COLUMNS, numeric_total
 
     result, _ = GeneralOSV_UPPFileProcessor().process_file(generalosv_upp_file)
 

@@ -6,48 +6,21 @@ Created on Mon Aug 25 11:23:20 2025
 """
 
 from pathlib import Path
-from typing import Dict, List
 
 import numpy as np
 import pandas as pd
 
+from flatregister.dtypes import coerce_numeric, ensure_column_types
 from flatregister.errors import RegisterEmptyError, RegisterNotRecognizedError, RegisterStructureError
 from register_processors.class_processor import FileProcessor, exclude_values
 from support_functions import fix_1c_excel_case, get_accounts_without_subaccount
 
-
-def top_level_accounts(d: Dict[str, int]) -> List[str]:
-    """
-    Возвращает список счетов верхнего уровня, для которых:
-      – либо хотя бы один их субсчёт (любой уровень вложенности) имеет value > 1,
-      – либо у счёта нет субсчетов и его собственное value > 1.
-    """
-    # 1. Какие счета вообще имеют value > 1
-    with_value_gt1 = {acc for acc, val in d.items() if val > 1}
-
-    # 2. Для каждого верхнего счёта проверим условие
-    result = []
-    for acc in d:
-        # берём только «голые» счета (без точек)
-        if '.' in acc:
-            continue
-
-        # есть ли субсчета с value > 1
-        has_sub = any(sub in with_value_gt1 for sub in d if sub.startswith(acc + '.'))
-
-        # либо субсчета есть и хотя бы один > 1, либо сам счёт > 1
-        if has_sub or acc in with_value_gt1:
-            result.append(acc)
-
-    return sorted(result)
 
 class Analisys_UPPFileProcessor(FileProcessor):
     """Обработчик для Анализа счета 1С УПП"""
     def __init__(self):
         super().__init__()
         self.df_type_connection = pd.DataFrame()  # хранение данных анализа счета с полем Вид связи КА за период
-        self.used_indices = set() # Множество для отслеживания использованных индексов
-        self.counter_clean_used_indices = 0 # счетчик количества очисток used_indices
 
     def find_sum_indices(self, df, column_name, tolerance=0.005):
         """
@@ -529,7 +502,7 @@ class Analisys_UPPFileProcessor(FileProcessor):
                 # Приводим столбцы к числовому типу
                 numeric_cols = ['С кред. счетов_base', 'В дебет счетов_base', 
                                'С кред. счетов_current', 'В дебет счетов_current']
-                merged_df[numeric_cols] = merged_df[numeric_cols].apply(pd.to_numeric, errors='coerce').fillna(0)
+                coerce_numeric(merged_df, numeric_cols, fill_zero=True)
                 
                 # Вычисляем разницы
                 merged_df[diff_col] = abs((merged_df[f'{data_col}_base'] - 
@@ -567,7 +540,7 @@ class Analisys_UPPFileProcessor(FileProcessor):
             # Приводим столбцы к числовому типу более эффективно
             numeric_cols = ['С кред. счетов_base', 'В дебет счетов_base', 
                            'С кред. счетов_current', 'В дебет счетов_current']
-            merged_df[numeric_cols] = merged_df[numeric_cols].apply(pd.to_numeric, errors='coerce').fillna(0)
+            coerce_numeric(merged_df, numeric_cols, fill_zero=True)
             
             # Вычисляем разницы
             merged_df['Разница_С_кред'] = (merged_df['С кред. счетов_base'] - 
@@ -630,7 +603,8 @@ class Analisys_UPPFileProcessor(FileProcessor):
         
         if col_with_subacc:
             df['Субсчет'] = df.loc[:, col_with_subacc]
-        
+
+        df = ensure_column_types(df)
         return df, self.table_for_check
 
         
@@ -1053,7 +1027,7 @@ class Analisys_NonUPPFileProcessor(FileProcessor):
         # Приводим столбцы к числовому типу более эффективно
         numeric_cols = ['С кред. счетов_base', 'В дебет счетов_base', 
                        'С кред. счетов_current', 'В дебет счетов_current']
-        merged_df[numeric_cols] = merged_df[numeric_cols].apply(pd.to_numeric, errors='coerce').fillna(0)
+        coerce_numeric(merged_df, numeric_cols, fill_zero=True)
         
         # Вычисляем разницы
         merged_df['Разница_С_кред'] = (merged_df['С кред. счетов_base'] - 
@@ -1078,5 +1052,6 @@ class Analisys_NonUPPFileProcessor(FileProcessor):
         
         if col_with_subacc:
             df['Субсчет'] = df.loc[:, col_with_subacc]
-        
+
+        df = ensure_column_types(df)
         return df, self.table_for_check

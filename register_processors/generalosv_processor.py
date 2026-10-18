@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from flatregister.dtypes import ensure_column_types, to_numeric
 from flatregister.errors import RegisterEmptyError, RegisterNotRecognizedError, RegisterStructureError
 from register_processors.class_processor import FileProcessor
 from support_functions import fix_1c_excel_case, get_keep_subaccounts
@@ -46,7 +47,7 @@ def pivot_hierarchy_to_columns(df, separator='_'):
 def get_col_sum_or_zero(df, col):
     """Возвращает сумму столбца или 0, если столбца нет"""
     if col in df.columns:
-        numeric_series = pd.to_numeric(df[col], errors='coerce').fillna(0)
+        numeric_series = to_numeric(df[col], fill_zero=True)
         return numeric_series.sum().round()
     return 0
 
@@ -140,6 +141,7 @@ class BaseOSVFileProcessor(FileProcessor, ABC):
             })
         
         df.drop(columns=['Уровень'], errors='ignore', inplace=True)
+        df = ensure_column_types(df)
         return df, self.table_for_check
 
 
@@ -204,18 +206,13 @@ class GeneralOSV_UPPFileProcessor(BaseOSVFileProcessor):
                     hint='Столбец нужен для разноса оборотов по дебету и кредиту. '
                          'Проверьте, что в 1С выгружена ОСВ с оборотом за период.')
 
-        cols = df.columns.tolist()
         target_idx_a = df.columns.get_loc('Сальдо на начало периода')
         target_idx_b = df.columns.get_loc('Оборот за период')
         target_idx_c = df.columns.get_loc('Сальдо на конец периода')
 
         new_cols = list(df.columns)
         new_cols[col_index_name_acc] = 'Наименование'
-        # def find_column_index(cols, df, start_idx, word):
-        #     for idx in range(start_idx + 1, len(cols)):
-        #         if df.iloc[0, idx] == word:
-        #             return idx
-        #     return None
+
         def find_column_index(df, start_idx, word):
             # 1. Берем срез первой строки от нужной позиции
             row_slice = df.iloc[0, start_idx + 1:]

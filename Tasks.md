@@ -67,16 +67,16 @@ uv run pytest                 # ожидается 102 passed, 2 xfailed
 
 ## Статус
 
-- **Текущая сессия:** S2 — закрыта. Следующая: **S3 (Типы данных)**
+- **Текущая сессия:** S4 — закрыта. Следующая: **S5 (Переезд в пакет)**
 - **Ветка:** `refactor/s0-safety-net`
 - **Baseline: СНЯТ** на 178 реальных выгрузках, два набора:
   - `tools/baseline_gaz.json` — 112 файлов, все шесть регистров, 117 с
   - `tools/baseline_mez.json` — 66 файлов, ОСВ счёта / анализ / общая ОСВ, 73 с
   Имена файлов в них обезличены хешем: названия организаций и номера счетов
   в репозиторий не попадают.
-- **Тесты:** `uv run pytest` → **102 прошли, 2 ожидаемо упали** (xfail), ~12 с
+- **Тесты:** `uv run pytest` → **103 прошли, 1 ожидаемо упал** (xfail), ~8 с
 - **Окружение:** `.venv` на Python 3.12.0, зависимости из `pyproject.toml`
-- **Линтер:** `uv run ruff check .` — 2 замечания, оба намеренно оставлены на S4
+- **Линтер:** `uv run ruff check .` — **0 замечаний** (было 2, оба закрыты в S4)
 - **Дымовые проверки:** `tools/smoke_errors.py` и `tools/smoke_ui.py` — зелёные
 
 ## Проверка регрессии — перед КАЖДОЙ сессией
@@ -131,11 +131,9 @@ uv run python tools\regress.py --compare tools\baseline.json tools\after.json
 |---|---|---|
 | S0 | Каркас и журнал | **закрыта** |
 | S1 | Ошибки и логирование | **закрыта** |
-| S2 | Страховка поведения | **закрыта** |
-| S3 | Типы данных | **следующая** |
-| S2 | Страховка поведения | не начата |
-| S3 | Типы данных | не начата |
-| S4 | Мусор | не начата |
+| S3 | Типы данных | **закрыта** |
+| S4 | Мусор | **закрыта** |
+| S5 | Переезд в пакет | **следующая** |
 | S5 | Переезд в пакет | не начата |
 | S6 | Общие примитивы | не начата |
 | S7 | УПП / не-УПП | не начата |
@@ -199,29 +197,32 @@ uv run python tools\regress.py --compare tools\baseline.json tools\after.json
 
 ### S3 — Типы данных
 
-- [x] ~~`flatregister/dtypes.py`: `coerce_numeric`, `coerce_text`~~ → **план изменился,
-      см. лог S2: сначала надо понять, что с чем сравнимо**
-- [ ] `MONEY_COLUMNS` / `ACCOUNT_COLUMNS` / `LEVEL_COLUMNS` объявлены один раз
-- [ ] **постусловие** в конце `process_file`: денежная колонка не должна быть
-      `object`/`str`/`string` — иначе `RegisterStructureError`
-- [ ] снять `xfail` с `test_общая_осв_денежные_колонки_числовые`
-- [ ] 12 разовых `apply(pd.to_numeric, errors='coerce')` → одна функция
-- [ ] `numeric_total` становится внутренней функцией `dtypes.py`
-- [ ] разобраться с `pd.set_option('future.no_silent_downcasting')` —
-      pandas 3 предупреждает, что опция устарела (`posting_processor.py:17`)
+- [x] `flatregister/dtypes.py`: роли колонок, `to_numeric`, `coerce_numeric`,
+      `numeric_total`, `ensure_column_types` (см. лог S3)
+- [x] `MONEY_COLUMNS` / `ACCOUNT_COLUMNS` / `LEVEL_COLUMNS` объявлены один раз
+- [x] **постусловие** в конце `process_file`: денежная колонка не должна быть
+      `object`/`str`/`string` — иначе `RegisterStructureError` (`ensure_column_types`)
+- [x] снять `xfail` с `test_общая_осв_денежные_колонки_числовые`
+- [x] разовые `pd.to_numeric(..., errors='coerce')` → одна функция
+- [x] `numeric_total` переехал из `support_functions.py` в `dtypes.py`
+- [x] `pd.set_option('future.no_silent_downcasting')` удалён из `posting_processor.py`
 
-**Критерий готовности:** baseline не изменился; ни одна денежная колонка не `object`.
+**Критерий готовности:** выполнен — baseline без регрессий, ни одной денежной колонки `object`.
+
+**Осталось на потом (осознанно):** суммы карточки/проводок (`Дебет`, `Кредит`,
+`Сумма`) не в `MONEY_COLUMNS`: в проводках не-УПП `Дебет`/`Кредит` — это счета,
+а не суммы, смешивать нельзя. Их приведение — вместе с `REGISTER_SPEC` в S8.
 
 ### S4 — Мусор
 
-- [ ] удалить `register_processors/accountosv_processor.py:1-894` (закомментированный legacy)
-- [ ] удалить прочие ~270 комментарных строк по пакету
-- [ ] мёртвый код: `top_level_accounts`, `used_indices`, `PermissionFileExcelError`, `PathError`,
-      закомментированный `find_column_index`
-- [ ] импорты из середины файла → в начало: `accountosv_processor.py:901`,
-      `support_functions.py:329`, `tools/regress.py:50-52`
-- [ ] `_spread_vertical_data` возвращает кортеж — исправить аннотацию
-- [ ] `handle_input`: `Literal` приводится к реальным ключам регистров
+- [x] удалить `register_processors/accountosv_processor.py:1-894` (закомментированный legacy) — −893 строк
+- [x] удалить прочие комментарные строки по пакету — закомментированных блоков `def`/`class` не осталось; обычные поясняющие комментарии оставлены
+- [x] мёртвый код: `top_level_accounts`, `used_indices`, `counter_clean_used_indices` удалены из `analisys_processor.py`;
+      `PermissionFileExcelError` / `PathError` уже отсутствовали; закомментированный `find_column_index` удалён из `generalosv_processor.py` (живой в `generalosv_processor.py` оставили)
+- [x] импорты из середины файла → в начало: удалён дубль `from pathlib import Path` в `support_functions.py`;
+      `tools/regress.py` — E402 для `tools/` разрешён в `pyproject.toml` (импорты там нужны после `sys.path.insert`)
+- [x] `_spread_vertical_data`: аннотация `-> pd.DataFrame` → `-> Tuple[pd.DataFrame, int]`
+- [x] `handle_input`: `Literal['posting', 'card', 'analisys', 'turnover', 'accountosv', 'generalosv']` уже совпадает с реальными ключами регистров — правок не потребовалось
 
 ### Находки `uv run ruff check .`
 
@@ -230,17 +231,17 @@ uv run python tools\regress.py --compare tools\baseline.json tools\after.json
 | Правило | Где | Статус |
 |---|---|---|
 | `I001` неотсортированные импорты | 12 мест | **исправлено** в S1 (`ruff --fix`) |
-| `E402` импорт не в начале файла | `accountosv_processor.py:901`, `support_functions.py:367` | S4 |
+| `E402` импорт не в начале файла | `accountosv_processor.py:901`, `support_functions.py:367` | **исправлено в S4** |
 | `E722` голый `except` | `class_processor.py:304` | **исправлено в S1** |
-| `E401` несколько импортов в строке | `support_functions.py:13` (`import re, os`) | S4 |
-| `F841` неиспользуемая переменная | `generalosv_processor.py:207` (`cols`) | S4 |
+| `E401` несколько импортов в строке | `support_functions.py:13` (`import re, os`) | **не актуально** — строки нет, `ruff` чист |
+| `F841` неиспользуемая переменная | `generalosv_processor.py:207` (`cols`) | **исправлено в S4** |
 
 `E402` в `tools/*.py` — осознанно разрешён в `pyproject.toml`: скриптам нужно
 подмешивать корень проекта в `sys.path` до импорта приложения.
 
 Неиспользуемых импортов (`F401`) в проекте **нет** — приятная новость.
 
-**Критерий готовности:** −900 строк; baseline не изменился.
+**Критерий готовности:** выполнено — −900 строк и более, baseline не изменился, `ruff` чист.
 
 ### S5 — Переезд в пакет
 
@@ -367,6 +368,71 @@ text.py  style.tcss  requirements.txt  # не трогаем
 ## Лог сессий
 
 _(записи добавляются снизу вверх)_
+
+### S3 — Типы данных (2026-10-18)
+
+**Сделано**
+
+- **`flatregister/dtypes.py`** — единственное место, где живут роли колонок:
+  `MONEY_COLUMNS`, `ACCOUNT_COLUMNS`, `LEVEL_PREFIX` / `LEVEL_COLUMNS`,
+  `is_level_column` / `level_columns`, `is_numeric_column`,
+  `to_numeric`, `coerce_numeric`, `numeric_total`, `ensure_column_types`.
+- **`ensure_column_types(df)`** вызывается в самом конце каждого `process_file`
+  (11 точек: card ×2, posting ×2, turnover ×2, analisys ×2, accountosv ×2,
+  generalosv ×1). Он приводит денежные колонки к числу и проверяет постусловие:
+  денежная колонка — не `object`/`str`/`string`, иначе `RegisterStructureError`;
+  счета и `Level_*` — не число.
+- **Разовые `pd.to_numeric(..., errors='coerce')[.fillna(0)]`** (~18 мест в
+  card/posting/analisys/generalosv) заменены на `to_numeric` / `coerce_numeric`.
+- **`numeric_total`** переехал из `support_functions.py` в `dtypes.py`
+  (импорты в accountosv/turnover/тестах поправлены).
+- **`posting_processor.py`**: удалён `pd.set_option('future.no_silent_downcasting')`
+  — в pandas 3 это устаревшая опция-пустышка, и именно она давала
+  `Pandas4Warning` в каждом прогоне тестов.
+- **`class_processor.py`** больше не знает про строку `'Level'` вручную:
+  `shiftable_level` и `find_max_level_column` используют `level_columns(df)`.
+- **xflag снят** с `test_общая_осв_денежные_колонки_числовые` — тест проходит.
+
+**Почему денежные колонки были `object`**
+
+`_preprocessor_openpyxl` собирает кадр из строк листа, где ещё лежат текстовые
+заголовки 1С, и тип колонки фиксируется по этим строкам до того, как шапка
+отрезается. Проверено на 169 обрабатываемых файлах: денежные колонки приходят
+как `str` (175 случаев) или `object` (383), **числом — ни разу**. Приведение
+через `pd.to_numeric(errors='coerce')` без потерь (0 отброшенных значений), что
+и позволило сделать это в конце `process_file`, не трогая предобработку.
+
+**Почему постусловие по счетам/уровням безопасно**
+
+На тех же 169 файлах **ни одна** колонка `ACCOUNT_COLUMNS` и ни одна `Level_*`
+не приходит числом. Значит проверка «счёт — не число» не сработает ложно, и
+заодно фиксирует, что имена уровней не превратились в числа.
+
+**Осознанно не сделано**
+
+- Суммы карточки и проводок (`Дебет`, `Кредит`, `Сумма`) в `MONEY_COLUMNS` не
+  добавлены: в проводках не-УПП `Дебет`/`Кредит` — это **счета**, а не суммы,
+  и одна общая константа их смешала бы. Разные роли — разные регистры, это
+  уедет вместе с `REGISTER_SPEC` в S8.
+- `LEVEL_COLUMNS` объявлен как `('Level_0', 'Level_1', 'Level_2')` для
+  ориентира, но определения идут через `LEVEL_PREFIX`: число уровней в выгрузке
+  не фиксировано.
+
+**Проверки (все зелёные)**
+
+- `uv run pytest` → **103 прошли, 1 ожидаемо упал** (`xfail` на порядок прочих
+  колонок, S8); `Pandas4Warning` исчез.
+- `uv run ruff check .` → те же **2 замечания** (`F841` в generalosv, `E402` в
+  `support_functions.py`) — намеренно оставлены на S4.
+- Регрессия: `after_gaz.json` и `after_mez.json` против baseline —
+  **0 регрессий** в обеих категориях (новых падений, изменений строк/колонок
+  и сумм), `EXIT=0`.
+- `tools/smoke_errors.py`, `tools/smoke_ui.py` — зелёные.
+- Контрольный замер: денежные колонки теперь только `float64`/`int64`,
+  числовых счётов и уровней — ноль.
+
+Дальше по плану — **S4 «Мусор»**: удалить закомментированный legacy, мёртвый
+код и поднять импорты из середины файлов наверх.
 
 ### S2 — Страховка поведения (2026-10-18)
 
