@@ -5,24 +5,20 @@ Created on Mon Aug 25 12:22:19 2025
 @author: a.karabedyan
 """
 
+import contextlib
+import os
+import tempfile
+import time
 from abc import ABC, abstractmethod
-from pathlib import Path
 from io import BytesIO
+from pathlib import Path
 from typing import List
 
 import openpyxl
-import xlwings as xw
 import pandas as pd
+import xlwings as xw
 
-import tempfile
-import os
-
-import time
-
-
-
-from custom_errors import RegisterProcessingError
-
+from flatregister.errors import RegisterNotRecognizedError
 
 '''
 Строки с данными значениями будут удалены из регистров,
@@ -278,34 +274,36 @@ class FileProcessor(ABC):
             with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as tmp_file:
                 tmp_file.write(file_like_object.getvalue())
                 tmp_path = tmp_file.name
-    
+
+            # Здесь поднимается настоящий Excel. Раньше книга и приложение
+            # закрывались только на успешном пути, и при любой ошибке внутри
+            # оставался зависший процесс EXCEL.EXE — а это уже следующий файл
+            # не читается с непонятным сообщением. Поэтому очистка в finally,
+            # а каждая операция закрытия глотает свои ошибки: повторное
+            # закрытие уже закрытого объекта не должно маскировать исходную.
+            app = None
+            wb_xl = None
             try:
                 app = xw.App(visible=False)
                 wb_xl = app.books.open(tmp_path)
                 sht_xl = wb_xl.sheets[0]
-    
+
                 # Читаем отформатированные значения проблемной строки (1-based индексация в xlwings)
                 formatted_header_row = []
                 for col_idx in range(1, max_col + 1):
                     cell = sht_xl.cells(header_row_idx + 1, col_idx)
                     formatted_header_row.append(cell.api.Text)  # именно отображаемое значение
-    
-                wb_xl.close()
-                app.quit()
             finally:
-                try:
+                if wb_xl is not None:
+                    with contextlib.suppress(Exception):
+                        wb_xl.close()
+                if app is not None:
+                    with contextlib.suppress(Exception):
+                        app.quit()
+                with contextlib.suppress(OSError):
                     os.unlink(tmp_path)
-                except Exception:
-                    pass
-            # Очистка xlwings для предотвращения "зависших" процессов Excel
-            try:
-                wb_xl.close()  # Повторно, на случай исключений выше
-                app.quit()
-            except:
-                pass
-            # xw.apps.cleanup()
-            time.sleep(0.5)  # Паузы для стабилизации
-    
+                time.sleep(0.5)  # Пауза, чтобы Excel успел освободить файл
+
             # Заменяем строку в данных на отформатированную из xlwings
             data[header_row_idx] = formatted_header_row
     
@@ -330,7 +328,11 @@ class FileProcessor(ABC):
         mask = first_col.str.contains('дата')
         
         if not mask.any():
-            raise RegisterProcessingError('Файл не является регистром 1с.')
+            raise RegisterNotRecognizedError(
+                'Файл не является регистром 1с.',
+                hint='Строка с заголовком «Дата» — признак карточки счёта и отчёта '
+                     'по проводкам. Похоже, выбран не тот тип регистра.',
+            )
         
         date_row_idx = mask.idxmax()
         

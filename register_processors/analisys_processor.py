@@ -5,13 +5,14 @@ Created on Mon Aug 25 11:23:20 2025
 @author: a.karabedyan
 """
 
-import numpy as np
-import pandas as pd
 from pathlib import Path
 from typing import Dict, List
 
+import numpy as np
+import pandas as pd
+
+from flatregister.errors import RegisterEmptyError, RegisterNotRecognizedError, RegisterStructureError
 from register_processors.class_processor import FileProcessor, exclude_values
-from custom_errors import RegisterProcessingError
 from support_functions import fix_1c_excel_case, get_accounts_without_subaccount
 
 
@@ -99,10 +100,10 @@ class Analisys_UPPFileProcessor(FileProcessor):
 
         Raises
         ------
-        RegisterProcessingError
-            Возникает, если обрабатываемый файл не является ОСВ
-            или является пустой ОСВ. Такой файл не обрабатывается.
-            Его имя сохраняется в списке, выводимом в конце обработки.
+        FlatRegisterError
+            Возникает, если обрабатываемый файл не является Анализом счёта
+            или является пустым. Такой файл не обрабатывается, его имя
+            попадает в отчёт о неудачных файлах в конце обработки.
 
         Returns
         -------
@@ -128,7 +129,10 @@ class Analisys_UPPFileProcessor(FileProcessor):
                 break
         
         if subkonto_col_idx is None:
-            raise RegisterProcessingError('Не найден столбец с "Счет" в первых 30 строках.')
+            raise RegisterStructureError(
+                'Не найден столбец с "Счет" в первых 30 строках.',
+                hint='Похоже, это не анализ счёта. Проверьте, что выбран тот тип '
+                     'регистра, который соответствует выгрузке.')
         
         # Теперь используем найденный столбец
         first_col = df.iloc[:, subkonto_col_idx].astype(str)
@@ -136,7 +140,9 @@ class Analisys_UPPFileProcessor(FileProcessor):
         
         # ошибка, если нет искомого значения
         if not mask.any():
-            raise RegisterProcessingError('Файл не является Анализом счета 1с.')
+            raise RegisterNotRecognizedError(
+                'Файл не является Анализом счета 1с.',
+                hint='В выгрузке нет строки заголовков со словом «Счет».')
         
         # индекс строки с искомым словом
         date_row_idx = mask.idxmax()
@@ -154,11 +160,16 @@ class Analisys_UPPFileProcessor(FileProcessor):
     
         # если отсутствует иерархия (+ и - на полях excel файла), значит он пуст
         if df['Уровень'].max() == 0:
-            raise RegisterProcessingError('Анализ счета пустой.')
+            raise RegisterEmptyError(
+                'Анализ счета пустой.',
+                hint='В выгрузке нет ни одной строки с данными.')
     
         # Уровень и Курсив должны иметь 0 или 1, иначе - ошибка
         if df['Уровень'].isnull().any() or df['Курсив'].isnull().any():
-            raise RegisterProcessingError('Найдены пустые значения в столбцах Уровень или Курсив.')
+            raise RegisterStructureError(
+                'Найдены пустые значения в столбцах Уровень или Курсив.',
+                hint='В Excel не выставлены уровни группировки (знаки «+» и «−» слева). '
+                     'Выгрузите регистр заново через меню «Сохранить как» в 1С.')
     
         return df
 
@@ -645,10 +656,10 @@ class Analisys_NonUPPFileProcessor(FileProcessor):
 
         Raises
         ------
-        RegisterProcessingError
-            Возникает, если обрабатываемый файл не является ОСВ
-            или является пустой ОСВ. Такой файл не обрабатывается.
-            Его имя сохраняется в списке, выводимом в конце обработки.
+        FlatRegisterError
+            Возникает, если обрабатываемый файл не является Анализом счёта
+            или является пустым. Такой файл не обрабатывается, его имя
+            попадает в отчёт о неудачных файлах в конце обработки.
 
         Returns
         -------
@@ -674,7 +685,10 @@ class Analisys_NonUPPFileProcessor(FileProcessor):
                 break
         
         if subkonto_col_idx is None:
-            raise RegisterProcessingError('Не найден столбец с "Счет" в первых 30 строках.')
+            raise RegisterStructureError(
+                'Не найден столбец с "Счет" в первых 30 строках.',
+                hint='Похоже, это не анализ счёта. Проверьте, что выбран тот тип '
+                     'регистра, который соответствует выгрузке.')
         
         # Теперь используем найденный столбец
         first_col = df.iloc[:, subkonto_col_idx].astype(str)
@@ -682,7 +696,9 @@ class Analisys_NonUPPFileProcessor(FileProcessor):
         
         # ошибка, если нет искомого значения
         if not mask.any():
-            raise RegisterProcessingError('Файл не является Анализом счета 1с.')
+            raise RegisterNotRecognizedError(
+                'Файл не является Анализом счета 1с.',
+                hint='В выгрузке нет строки заголовков со словом «Счет».')
         
         # индекс строки с искомым словом
         date_row_idx = mask.idxmax()
@@ -700,11 +716,16 @@ class Analisys_NonUPPFileProcessor(FileProcessor):
     
         # если отсутствует иерархия (+ и - на полях excel файла), значит он пуст
         if df['Уровень'].max() == 0:
-            raise RegisterProcessingError('Анализ счета пустой.')
+            raise RegisterEmptyError(
+                'Анализ счета пустой.',
+                hint='В выгрузке нет ни одной строки с данными.')
     
         # Уровень и Курсив должны иметь 0 или 1, иначе - ошибка
         if df['Уровень'].isnull().any() or df['Курсив'].isnull().any():
-            raise RegisterProcessingError('Найдены пустые значения в столбцах Уровень или Курсив.')
+            raise RegisterStructureError(
+                'Найдены пустые значения в столбцах Уровень или Курсив.',
+                hint='В Excel не выставлены уровни группировки (знаки «+» и «−» слева). '
+                     'Выгрузите регистр заново через меню «Сохранить как» в 1С.')
     
         return df
 

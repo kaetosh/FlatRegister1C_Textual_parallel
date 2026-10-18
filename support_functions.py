@@ -5,19 +5,24 @@ Created on Mon Aug 25 09:45:22 2025
 @author: a.karabedyan
 """
 import json
+import math
+import os
+import re
 import zipfile
 from io import BytesIO
-from pathlib import Path
-from typing import List, Iterable, Dict, Any
-import math
-import re, os
-import pandas as pd
-from typing import Optional
 from itertools import product
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional
+
+import pandas as pd
+
 # import openpyxl
 # import tempfile
+from flatregister.errors import ConfigError, FileFailure, InputPathError, SheetUnreadableError
+from flatregister.logging_setup import get_logger
 
-from custom_errors import IncorrectFolderOrFilesPath
+_log = get_logger("support")
+
 # Глобальные константы
 MAX_EXCEL_ROWS = 1_000_000
 COLUMN_PREFIXES = ('Операция_', 'Содержание_', 'Документ_', 'Аналитика Дт_', 'Субконто Дт_', 'Аналитика Кт_', 'Субконто Кт_', 'Level_')
@@ -92,16 +97,27 @@ def clear_config_cache():
     _config_cache = {}
 
 def write_default_config(config_path: str = None):
-    """Создает файл config.json со значениями по умолчанию."""
+    """Создает файл config.json со значениями по умолчанию.
+
+    При недоступной для записи папке бросает :class:`ConfigError` наружу.
+    Раньше ошибка уходила в ``print()``, которого в GUI-приложении не видно:
+    пользователь получал настройки по умолчанию и не понимал, почему его
+    выбор не применяется.
+    """
     if config_path is None:
         config_path = CONFIG_FILE_PATH
-    
+
     try:
         with open(config_path, 'w', encoding='utf-8') as file:
             json.dump(DEFAULT_CONFIG, file, ensure_ascii=False, indent=4)
-        # print(f"Создан файл конфигурации по умолчанию: {config_path}")
-    except Exception as e:
-        print(f"Ошибка при создании файла конфигурации по умолчанию: {e}")
+    except OSError as error:
+        _log.error("Не удалось создать файл конфигурации %s", config_path, exc_info=True)
+        raise ConfigError(
+            "Не удалось создать файл настроек config.json.",
+            hint=f"Проверьте права на запись в папку {Path(config_path).parent}. "
+                 "Подробности — в журнале logs/app.log.",
+        ) from error
+
 
 def read_config(config_path: str = None) -> dict:
     """
@@ -110,29 +126,44 @@ def read_config(config_path: str = None) -> dict:
     """
     if config_path is None:
         config_path = CONFIG_FILE_PATH
-    
+
     # 1. Попытка прочитать файл
     try:
         with open(config_path, 'r', encoding='utf-8') as file:
-            config = json.load(file)
-            return config
-    
-    # 2. Обработка FileNotFoundError: файл не найден
+            return json.load(file)
+
+    # 2. Файла нет — создаём со значениями по умолчанию
     except FileNotFoundError:
-        # print(f"Файл конфигурации {config_path} не найден. Создание файла по умолчанию.")
-        write_default_config(config_path)
-        return DEFAULT_CONFIG
-        
-    # 3. Обработка json.JSONDecodeError: некорректный формат
+        return _bootstrap_default_config(config_path)
+
+    # 3. Некорректный формат — перезаписываем значениями по умолчанию
+    #    (само перетирание пользовательских настроек разбирается в S8)
     except json.JSONDecodeError:
-        # print(f"Ошибка: Неверный формат JSON в файле {config_path}. Файл будет перезаписан значениями по умолчанию.")
-        write_default_config(config_path)
+        _log.warning("Файл конфигурации %s повреждён, заменяю значениями по умолчанию",
+                     config_path)
+        return _bootstrap_default_config(config_path)
+
+    # 4. Остальное: битая кодировка, папка вместо файла, нет прав на чтение.
+    #    Сужать до OSError здесь нельзя — json.load бросает ещё и UnicodeDecodeError,
+    #    и раньше такой случай тихо уходил в значения по умолчанию.
+    except Exception:
+        _log.error("Не удалось прочитать конфигурацию %s", config_path, exc_info=True)
         return DEFAULT_CONFIG
-        
-    # 4. Обработка других ошибок
-    except Exception as e:
-        print(f"Непредвиденная ошибка при чтении конфигурации: {e}. Возврат значений по умолчанию.")
-        return DEFAULT_CONFIG 
+
+
+def _bootstrap_default_config(config_path: str) -> dict:
+    """Создать config.json со значениями по умолчанию, не ломая чтение настроек.
+
+    Отличается от :func:`write_default_config` тем, что ошибку записи
+    проглатывает: невозможность создать файл настроек не должна превращать
+    чтение конфигурации в отказ обработки файлов.
+    """
+    try:
+        write_default_config(config_path)
+    except ConfigError:
+        _log.warning("Работаю на настройках по умолчанию: создать %s не удалось",
+                     config_path)
+    return DEFAULT_CONFIG 
 
 def update_config(updates, config_path: str = None):
     
@@ -167,12 +198,14 @@ def update_config(updates, config_path: str = None):
         # Запись обновленной конфигурации
         with open(config_path, 'w', encoding='utf-8') as file:
             json.dump(config, file, ensure_ascii=False, indent=4)
-        
-        # print("Конфигурация успешно обновлена")
+
         clear_config_cache()
         return True
-        
-    except Exception:
+
+    except OSError as error:
+        # Раньше здесь был голый `return False`, и настройка молча не
+        # сохранялась: пользователь нажимал «Сохранить» и ничего не происходило.
+        _log.error("Не удалось сохранить настройки в %s: %s", config_path, error)
         return False
 
 def load_config(file_path: str = CONFIG_FILE_PATH) -> Dict[str, Any]:
@@ -296,7 +329,9 @@ def validate_paths(paths: Iterable[Path]) -> List[Path]:
     Генерирует ошибку, если хоть один путь не существует и не может быть исправлен."""
     
     if not paths:
-        raise IncorrectFolderOrFilesPath('Неверные пути к папке или файлу/файлам.')
+        raise InputPathError(
+            'Неверные пути к папке или файлу/файлам.',
+            hint='Укажите существующий файл .xlsx или папку с такими файлами.')
     
     normalized_paths = []
     invalid_paths = []
@@ -321,7 +356,10 @@ def validate_paths(paths: Iterable[Path]) -> List[Path]:
     # Если есть невалидные пути, генерируем ошибку
     if invalid_paths:
         error_message = 'Неверные пути к папке или файлу/файлам:\n' + '\n'.join(invalid_paths)
-        raise IncorrectFolderOrFilesPath(error_message)
+        raise InputPathError(
+            error_message,
+            hint='Перетащите файл или папку в окно программы. Если в пути есть '
+                 'тире, попробуйте вставить путь с дефисом вместо длинного тире.')
     
     return normalized_paths
 
@@ -329,8 +367,6 @@ def validate_paths(paths: Iterable[Path]) -> List[Path]:
 from pathlib import Path
 
 
-
-    
 def fix_1c_excel_case(file_path: Path) -> BytesIO:
     """Исправляет регистр имен в xlsx-архивах 1С"""
     try:
@@ -351,12 +387,16 @@ def fix_1c_excel_case(file_path: Path) -> BytesIO:
         return new_zip
         
     except PermissionError as e:
-        raise PermissionError(
-            f"Файл {file_path.name} открыт в другой программе. Закройте его."
+        # Самый частый случай на Windows: файл открыт в Excel.
+        raise SheetUnreadableError(
+            f"Файл {file_path.name} открыт в другой программе. Закройте его.",
+            hint="Закройте книгу в Excel и повторите обработку.",
         ) from e
-    except Exception as e:
-        raise RuntimeError(
-            f"Ошибка обработки файла {file_path.name}: {str(e)}"
+    except (zipfile.BadZipFile, OSError, ValueError, KeyError) as e:
+        raise SheetUnreadableError(
+            f"Файл {file_path.name} не читается как таблица Excel.",
+            hint="Файл повреждён или это не .xlsx. Откройте его в Excel и "
+                 "пересохраните как Книга Excel (*.xlsx).",
         ) from e
 
 
@@ -432,36 +472,40 @@ def is_valid_dragged_path(path_str: str) -> bool:
     # Проверяем, существует ли путь
     return os.path.exists(normalized_path)
 
-def generate_failed_processing_markdown(error_dict):
-    """
-    Генерирует Markdown-текст с таблицей ошибок обработки файлов.
-    
+def generate_failed_processing_markdown(failures: Dict[str, FileFailure]) -> str:
+    """Генерирует Markdown-текст с таблицей ошибок обработки файлов.
+
     Args:
-        error_dict (dict): Словарь, где ключи - имена файлов, 
-                          значения - причины неудачной обработки
-    
+        failures: словарь ``имя файла -> FileFailure``. Строковые значения
+            принимаются на всякий случай и показываются как есть — так отчёт
+            не рассыпается, если откуда-то пришла строка вместо FileFailure.
+
     Returns:
-        str: Текст в формате Markdown с заголовком и таблицей
+        Текст в формате Markdown. Технические подробности (трейсбеки) сюда
+        намеренно не попадают: они живут в журнале logs/app.log.
     """
-    if not error_dict:
+    if not failures:
         return ""
-    
-    # Заголовок
-    markdown_text = "⚠️ Файлы не распознаны как регистры 1С или возникли ошибки:\n\n"
-    
-    # Заголовки таблицы
-    markdown_text += "| Имя файла | Причина ошибки |\n"
-    markdown_text += "|-----------|----------------|\n"
-    
-    # Заполняем таблицу данными из словаря
-    for filename, error_reason in error_dict.items():
-        # Экранируем символы, которые могут сломать Markdown таблицу
-        safe_filename = str(filename).replace('|', '\\|')
-        safe_error = str(error_reason).replace('|', '\\|')
-        
-        markdown_text += f"| {safe_filename} | {safe_error} |\n"
-    
-    return markdown_text
+
+    def cell(value) -> str:
+        # Вертикальная черта и перенос строки ломают таблицу Markdown.
+        text = str(value or "").replace("|", "\\|").replace("\n", " ").strip()
+        return text or "—"
+
+    lines = [
+        "## Не обработаны",
+        "",
+        "Остальные файлы обработаны и попали в итоговый файл.",
+        "",
+        "| Файл | Причина | Что можно сделать |",
+        "|---|---|---|",
+    ]
+    for file_name, failure in failures.items():
+        reason = getattr(failure, "user_message", failure)
+        hint = getattr(failure, "hint", None)
+        lines.append(f"| {cell(file_name)} | {cell(reason)} | {cell(hint)} |")
+
+    return "\n".join(lines) + "\n"
 
 # КоррСчета, субсчета по которым не включаем в итоговые файлы, оставляем только счета
 def get_accounts_without_subaccount() -> List[str]:

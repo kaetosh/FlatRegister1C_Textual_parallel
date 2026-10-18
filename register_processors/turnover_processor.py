@@ -5,12 +5,13 @@ Created on Mon Aug 25 11:23:20 2025
 @author: a.karabedyan
 """
 
-import numpy as np
-import pandas as pd
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
+
+from flatregister.errors import RegisterEmptyError, RegisterNotRecognizedError, RegisterStructureError
 from register_processors.class_processor import FileProcessor, exclude_values
-from custom_errors import RegisterProcessingError
 from support_functions import fix_1c_excel_case, get_accounts_without_subaccount, numeric_total
 
 
@@ -35,10 +36,10 @@ class Turnover_UPPFileProcessor(FileProcessor):
 
         Raises
         ------
-        RegisterProcessingError
-            Возникает, если обрабатываемый файл не является ОСВ
-            или является пустой ОСВ. Такой файл не обрабатывается.
-            Его имя сохраняется в списке, выводимом в конце обработки.
+        FlatRegisterError
+            Возникает, если обрабатываемый файл не является Оборотами счёта
+            или является пустым. Такой файл не обрабатывается, его имя
+            попадает в отчёт о неудачных файлах в конце обработки.
 
         Returns
         -------
@@ -65,7 +66,10 @@ class Turnover_UPPFileProcessor(FileProcessor):
                 break
         
         if subkonto_col_idx is None:
-            raise RegisterProcessingError('Не найден столбец с "Субконто" в первых 30 строках.')
+            raise RegisterStructureError(
+                'Не найден столбец с "Субконто" в первых 30 строках.',
+                hint='Похоже, это не обороты счёта. Проверьте, что выбран тот тип '
+                     'регистра, который соответствует выгрузке.')
         
         # Теперь используем найденный столбец
         first_col = df.iloc[:, subkonto_col_idx].astype(str)
@@ -73,7 +77,9 @@ class Turnover_UPPFileProcessor(FileProcessor):
 
         # ошибка, если нет искомого значения
         if not mask.any():
-            raise RegisterProcessingError('Файл не является Оборотами счета 1с.')
+            raise RegisterNotRecognizedError(
+                'Файл не является Оборотами счета 1с.',
+                hint='В выгрузке нет строки заголовков со словом «Субконто».')
         # индекс строки с искомым словом
         date_row_idx = mask.idxmax()
     
@@ -91,11 +97,16 @@ class Turnover_UPPFileProcessor(FileProcessor):
     
         # если отсутствует иерархия (+ и - на полях excel файла), значит он пуст
         if df['Уровень'].max() == 0:
-            raise RegisterProcessingError('Анализ счета пустой.')
+            raise RegisterEmptyError(
+                'Обороты счета пустые.',
+                hint='В выгрузке нет ни одной строки с данными.')
     
         # Уровень и Курсив должны иметь 0 или 1, иначе - ошибка
         if df['Уровень'].isnull().any() or df['Курсив'].isnull().any():
-            raise RegisterProcessingError('Найдены пустые значения в столбцах Уровень или Курсив.')
+            raise RegisterStructureError(
+                'Найдены пустые значения в столбцах Уровень или Курсив.',
+                hint='В Excel не выставлены уровни группировки (знаки «+» и «−» слева). '
+                     'Выгрузите регистр заново через меню «Сохранить как» в 1С.')
     
         return df
 
@@ -333,7 +344,10 @@ class Turnover_UPPFileProcessor(FileProcessor):
         '''Сохраняем данные по оборотам до обработки в таблицах'''
         
         if df[df['Субконто'] == 'Итого'][desired_order].empty:
-            raise RegisterProcessingError('Строка с Итого пустая')
+            raise RegisterStructureError(
+                'Строка «Итого» пустая — не с чем сверять результат.',
+                hint='Проверьте, что в выгрузке есть строка «Итого» с итогами по счёту. '
+                     'Без неё сверка оборотов невозможна.')
             
         df_for_check = df[df['Субконто'] == 'Итого'][['Субконто'] + desired_order_not_with_suff_do_ko].copy().tail(2).iloc[[0]]
         df_for_check[desired_order_not_with_suff_do_ko] = df_for_check[desired_order_not_with_suff_do_ko].astype(float).fillna(0)
@@ -482,10 +496,10 @@ class Turnover_NonUPPFileProcessor(FileProcessor):
 
         Raises
         ------
-        RegisterProcessingError
-            Возникает, если обрабатываемый файл не является ОСВ
-            или является пустой ОСВ. Такой файл не обрабатывается.
-            Его имя сохраняется в списке, выводимом в конце обработки.
+        FlatRegisterError
+            Возникает, если обрабатываемый файл не является Оборотами счёта
+            или является пустым. Такой файл не обрабатывается, его имя
+            попадает в отчёт о неудачных файлах в конце обработки.
 
         Returns
         -------
@@ -512,7 +526,10 @@ class Turnover_NonUPPFileProcessor(FileProcessor):
                 break
         
         if subkonto_col_idx is None:
-            raise RegisterProcessingError('Не найден столбец с "Счет" в первых 30 строках.')
+            raise RegisterStructureError(
+                'Не найден столбец с "Счет" в первых 30 строках.',
+                hint='Похоже, это не обороты счёта. Проверьте, что выбран тот тип '
+                     'регистра, который соответствует выгрузке.')
         
         # Теперь используем найденный столбец
         first_col = df.iloc[:, subkonto_col_idx].astype(str)
@@ -520,7 +537,9 @@ class Turnover_NonUPPFileProcessor(FileProcessor):
         
         # ошибка, если нет искомого значения
         if not mask.any():
-            raise RegisterProcessingError('Файл не является Анализом счета 1с.')
+            raise RegisterNotRecognizedError(
+                'Файл не является Оборотами счета 1с.',
+                hint='В выгрузке нет строки заголовков со словом «Счет».')
         
         # индекс строки с искомым словом
         date_row_idx = mask.idxmax()
@@ -538,11 +557,16 @@ class Turnover_NonUPPFileProcessor(FileProcessor):
     
         # если отсутствует иерархия (+ и - на полях excel файла), значит он пуст
         if df['Уровень'].max() == 0:
-            raise RegisterProcessingError('Анализ счета пустой.')
+            raise RegisterEmptyError(
+                'Обороты счета пустые.',
+                hint='В выгрузке нет ни одной строки с данными.')
     
         # Уровень и Курсив должны иметь 0 или 1, иначе - ошибка
         if df['Уровень'].isnull().any() or df['Курсив'].isnull().any():
-            raise RegisterProcessingError('Найдены пустые значения в столбцах Уровень или Курсив.')
+            raise RegisterStructureError(
+                'Найдены пустые значения в столбцах Уровень или Курсив.',
+                hint='В Excel не выставлены уровни группировки (знаки «+» и «−» слева). '
+                     'Выгрузите регистр заново через меню «Сохранить как» в 1С.')
     
         return df
 
@@ -761,7 +785,10 @@ class Turnover_NonUPPFileProcessor(FileProcessor):
         '''Сохраняем данные по оборотам до обработки в таблицах'''
         
         if df[df['Счет'] == 'Итого'][desired_order].empty:
-            raise RegisterProcessingError('Строка с Итого пустая')
+            raise RegisterStructureError(
+                'Строка «Итого» пустая — не с чем сверять результат.',
+                hint='Проверьте, что в выгрузке есть строка «Итого» с итогами по счёту. '
+                     'Без неё сверка оборотов невозможна.')
             
         df_for_check = df[df['Счет'] == 'Итого'][['Счет'] + desired_order_not_with_suff_do_ko].copy().tail(2).iloc[[0]]
         df_for_check[desired_order_not_with_suff_do_ko] = df_for_check[desired_order_not_with_suff_do_ko].astype(float).fillna(0)

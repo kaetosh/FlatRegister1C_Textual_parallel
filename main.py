@@ -1,45 +1,52 @@
-import time
-import segno
 import io
+import time
 from functools import lru_cache
-from typing import List
 from pathlib import Path
+from typing import List
 
+import segno
 from textual import on, work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import (Center,
-                                Container,
-                                Horizontal,
-                                ScrollableContainer,
-                                VerticalScroll)
-
+from textual.containers import Center, Container, Horizontal, ScrollableContainer, VerticalScroll
 from textual.reactive import reactive
 from textual.screen import ModalScreen, Screen
 from textual.validation import Function
-from textual.widgets import (Button,
-                             Footer,
-                             Input,
-                             Header,
-                             Label,
-                             LoadingIndicator,
-                             Markdown,
-                             ProgressBar,
-                             RadioButton,
-                             RadioSet,
-                             Select,
-                             SelectionList,
-                             Static,
-                             Switch)
+from textual.widgets import (
+    Button,
+    Footer,
+    Header,
+    Input,
+    Label,
+    LoadingIndicator,
+    Markdown,
+    ProgressBar,
+    RadioButton,
+    RadioSet,
+    Select,
+    SelectionList,
+    Static,
+    Switch,
+)
 
 from file_handler import FileHandler
-from support_functions import (DEFAULT_CONFIG,
-                               generate_failed_processing_markdown,
-                               is_valid_dragged_path,
-                               get_parallel_processing_option,
-                               read_config,
-                               update_config)
+from flatregister.errors import FileFailure, describe_exception
+from flatregister.logging_setup import get_log_path, get_logger, log_failure, setup_logging
+from support_functions import (
+    DEFAULT_CONFIG,
+    generate_failed_processing_markdown,
+    get_parallel_processing_option,
+    is_valid_dragged_path,
+    read_config,
+    update_config,
+)
 from text import REQUIREMENTS, START_WINDOW
+
+# Журнал настраивается один раз при импорте, до создания приложения: иначе
+# об отказе файла сообщить некуда, а первое же обращение к конфигурации
+# происходит ещё в compose.
+setup_logging()
+_log = get_logger("ui")
 
 class LoaderIndicatorCustom(ModalScreen):
     def compose(self) -> ComposeResult:
@@ -85,11 +92,23 @@ class ProgressBarCustom(ModalScreen):
 
 class ResultProcessingDirectotyScreen(ModalScreen):
     """Экран с выводом необработанных файлов в виде таблицы:
-    Имя файла/причина неудачной обработки"""
+    Имя файла / причина отказа / что можно сделать"""
     BINDINGS = [("escape", "dismiss", "Закрыть")]
-    
+
+    def __init__(self, failures: dict, **kwargs):
+        super().__init__(**kwargs)
+        self.failures = failures
+        self.markdown_text = generate_failed_processing_markdown(failures)
+        self.log_path = get_log_path()
+
     def compose(self) -> ComposeResult:
-        yield Markdown(app.failed_processing_markdown, id='result_processing')
+        yield Markdown(self.markdown_text, id='result_processing')
+        if any(getattr(f, "technical_detail", None) for f in self.failures.values()):
+            yield Static(
+                f"Подробности (включая трейсбэки) — в журнале: {self.log_path}",
+                id="failed_files_log_hint",
+                markup=False,
+            )
         yield Footer(show_command_palette=False)
 
 class SettingsScreenRegister(ModalScreen):
@@ -254,9 +273,8 @@ class RegisterScreen(Screen):
     @work(thread=True)  # Запускаем в отдельном потоке, чтобы не блокировать UI
     def process_file(self, input_path, register, progress_screen) -> None:
         parallel_processing_option = get_parallel_processing_option()
-        file_handler = FileHandler(parallel = parallel_processing_option)
-        failed_processing_markdown = ''
-        
+        file_handler = FileHandler(parallel=parallel_processing_option)
+
         try:
             file_handler.handle_input(input_path,
                                       register,
@@ -264,36 +282,53 @@ class RegisterScreen(Screen):
 
             if file_handler.storage_processed_registers:
                 file_handler._save_and_open_batch_result(progress_callback=progress_screen.update_progress) # Передаем callback
-            
-            if file_handler.not_correct_files:
-                failed_processing_markdown = generate_failed_processing_markdown(file_handler.not_correct_files)
-                file_handler.not_correct_files.clear()
-            
-            # Очистка хранилища
-            if file_handler.storage_processed_registers:
-                file_handler.storage_processed_registers.clear()
-            if file_handler.check:
-                file_handler.check.clear()
 
-            self.app.call_from_thread(self.on_success, failed_processing_markdown)  # Возвращаемся в основной поток
-        except Exception as error_description:
-            self.app.call_from_thread(self.on_error, str(error_description))  # Обработка ошибок
-    
-    def on_success(self, failed_processing_markdown) -> None:
-        
+            # Снимаем отчёты и чистим хранилище до возврата в UI-поток: иначе
+            # фоновый поток продолжал бы держать в памяти все кадры.
+            failures = dict(file_handler.not_correct_files)
+            processed_count = len(file_handler.storage_processed_registers)
+            file_handler.not_correct_files.clear()
+            file_handler.storage_processed_registers.clear()
+            file_handler.check.clear()
+
+            # Возвращаемся в основной поток
+            self.app.call_from_thread(self.on_success, failures, processed_count)
+        except Exception as error:
+            # Единственная точка, где ошибка обработки превращается в то, что
+            # видит пользователь. Раньше здесь был `str(error_description)`:
+            # на экране появлялось либо служебное сообщение pandas, либо пустое
+            # «KeyError: 'С кред. счетов'». Теперь — понятный текст, а трейсбек
+            # целиком уходит в журнал.
+            failure = describe_exception(error, file_name=getattr(input_path, "name", ""))
+            log_failure(failure, logger=_log)
+            self.app.call_from_thread(self.on_error, failure)
+
+    def on_success(self, failures: dict, processed_count: int) -> None:
+
         while len(self.app.screen_stack) > 1:
             self.app.pop_screen()
-        self.notify("Обработка завершена!")
+
+        if processed_count:
+            self.notify(f"Обработка завершена! Обработано файлов: {processed_count}.")
+        else:
+            self.notify("Обработка завершена, но ни один файл не распознан как выбранный регистр.",
+                        severity="warning", timeout=8, markup=False)
+
         self.app.contact_visibility = 1
-        if failed_processing_markdown:
-            app.failed_processing_markdown = failed_processing_markdown
-            self.app.push_screen(ResultProcessingDirectotyScreen())
-    
-    def on_error(self, error: str) -> None:
-        
+
+        if failures:
+            self.app.push_screen(ResultProcessingDirectotyScreen(failures))
+
+    def on_error(self, failure: FileFailure) -> None:
+
         while len(self.app.screen_stack) > 1:
             self.app.pop_screen()
-        self.notify(f"Ошибка обработки: {error}")
+
+        # markup=False обязателен: текст ошибки приходит из файла выгрузки
+        # (имя файла, название счёта) и квадратные скобки в нём ломали разметку.
+        self.notify(failure.user_message, severity="error", timeout=10, markup=False)
+        if failure.hint:
+            self.notify(failure.hint, severity="warning", timeout=10, markup=False)
         self.app.contact_visibility = 1
         
     def key_escape(self):
@@ -485,15 +520,12 @@ class FlatRegister1CApp(App):
     
     contact_visibility = reactive(1, bindings=True)
     
-    # тип регистра (ОСВ, анализ счета, обороты счета и т.д.)
+    # выбранный тип регистра (ОСВ, анализ счета, обороты счета и т.д.)
     register = reactive("Не выбран регистр!")
-    
+
     # описание требований к выбранному регистру
     register_requirements = reactive("Отсутствует описание, т.к. не выбран регистр!")
-    
-    # вывод информации о необработанных в результате ошибок файлов
-    failed_processing_markdown = reactive("")
-    
+
     # список выбранных корр.счетов, по которым не нужна расшифровка по субсчетам
     accounts_without_subaccount: List[str] = reactive(['НЕ ВЫБРАНЫ'])
     

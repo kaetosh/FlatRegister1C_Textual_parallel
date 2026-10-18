@@ -6,17 +6,15 @@ Created on Mon Aug 25 11:23:20 2025
 """
 
 import os
-import numpy as np
-import pandas as pd
-
 from pathlib import Path
 from typing import List, Tuple
 
+import numpy as np
+import pandas as pd
+
+from flatregister.errors import RegisterEmptyError, RegisterNotRecognizedError, RegisterStructureError
 from register_processors.class_processor import FileProcessor
-from custom_errors import RegisterProcessingError
 from support_functions import fix_1c_excel_case
-
-
 
 
 class Card_UPPFileProcessor(FileProcessor):
@@ -68,7 +66,10 @@ class Card_UPPFileProcessor(FileProcessor):
         try:
             filtered = df[df['Операция'] == operation_filter].copy()
         except KeyError:
-            raise RegisterProcessingError('Не найден или пустой столбец Операция.')
+            raise RegisterStructureError(
+                'Не найден или пустой столбец «Операция».',
+                hint='Похоже, это не карточка счёта из 1С УПП. Проверьте, что выбран '
+                     'тот тип регистра, который соответствует выгрузке.')
         if filtered.empty:
             return pd.DataFrame(), df
         
@@ -108,7 +109,9 @@ class Card_UPPFileProcessor(FileProcessor):
         df_currency, df = self._extract_special_data(df, 'В валюте :', ['Документ', 'Дт_валюта', 'Дт_валютая_сумма', 'Кт_валюта', 'Кт_валютая_сумма'])
                  
         if df.empty:
-            raise RegisterProcessingError(f"Карточка 1с пустая в файле {file_path.name}, обработка невозможна.")
+            raise RegisterEmptyError(
+                f'Карточка счёта в файле {file_path.name} пустая.',
+                hint='В выгрузке нет ни одной строки с данными.')
         
         # Подготовка данных
         operations_pivot = (
@@ -256,7 +259,10 @@ class Card_NonUPPFileProcessor(FileProcessor):
         # Поиск строки с заголовками
         period_rows = df.index[df.iloc[:, 0] == 'Период'].tolist()
         if not period_rows:
-            raise RegisterProcessingError('Не найден заголовок Период в шапке таблицы')
+            raise RegisterStructureError(
+                'Не найден заголовок «Период» в шапке таблицы.',
+                hint='В выгрузке нет строки с заголовком «Период» — по ней определяется '
+                     'шапка таблицы. Похоже, это не карточка счёта.')
             
         header_row = period_rows[0]
         df.columns = df.iloc[header_row]
@@ -299,6 +305,9 @@ class Card_NonUPPFileProcessor(FileProcessor):
         df.insert(0, 'Имя_файла', os.path.basename(file_path))
         
         if df.empty:
-            raise RegisterProcessingError(f"Карточка 1с пустая в файле {file_path.name}, обработка невозможна. Файл не УПП")
+            raise RegisterNotRecognizedError(
+                f'Файл {file_path.name} не является карточкой счёта 1С.',
+                hint='В выгрузке нет ни строки с заголовком «Период», ни данных. '
+                     'Похоже, это выгрузка из 1С УПП — выберите другую карточку счёта.')
         
         return df, self.table_for_check

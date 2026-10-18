@@ -899,14 +899,15 @@ Created on Mon Aug 25 11:23:20 2025
 """
 
 import re
+from pathlib import Path
+from typing import Optional, Tuple
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
-from typing import Tuple, Optional
 
+from flatregister.errors import RegisterEmptyError, RegisterNotRecognizedError, RegisterStructureError
 from register_processors.class_processor import FileProcessor, exclude_values
-from custom_errors import RegisterProcessingError
-from support_functions import fix_1c_excel_case, numeric_total, MONEY_COLUMNS
+from support_functions import MONEY_COLUMNS, fix_1c_excel_case, numeric_total
 
 
 def find_account_from_text(df: pd.DataFrame, search_text: str = "Оборотно-сальдовая ведомость по счету ") -> Optional[str]:
@@ -1062,14 +1063,19 @@ class BaseAccountOSVProcessor(FileProcessor):
         """Проверка на пустую ОСВ"""
         if df['Уровень'].max() == 0:
             if numeric_total(df, MONEY_COLUMNS) == 0:
-                raise RegisterProcessingError('ОСВ счета вероятно пустая.')
+                raise RegisterEmptyError(
+                    'ОСВ счета вероятно пустая.',
+                    hint='В выгрузке нет ни одной строки с данными.')
             else:
                 df.loc[:, 'Уровень'] = 1
     
     def _validate_level_columns(self, df: pd.DataFrame) -> None:
         """Проверка наличия пустых значений в столбцах Уровень и Курсив"""
         if df['Уровень'].isnull().any() or df['Курсив'].isnull().any():
-            raise RegisterProcessingError('Найдены пустые значения в столбцах Уровень или Курсив.')
+            raise RegisterStructureError(
+                'Найдены пустые значения в столбцах Уровень или Курсив.',
+                hint='В Excel не выставлены уровни группировки (знаки «+» и «−» слева). '
+                     'Выгрузите регистр заново через меню «Сохранить как» в 1С.')
     
     def _process_missing_values(self, df: pd.DataFrame, account_col: str) -> pd.DataFrame:
         """Обработка пропущенных значений"""
@@ -1218,12 +1224,17 @@ class AccountOSV_UPPFileProcessor(BaseAccountOSVProcessor):
         col_idx, header_row_idx = processor._find_header_column(df, 'субконто')
         
         if col_idx is None or header_row_idx is None:
-            raise RegisterProcessingError('Не найден столбец с "Субконто" в первых 30 строках.')
+            raise RegisterStructureError(
+                'Не найден столбец с "Субконто" в первых 30 строках.',
+                hint='Похоже, это не ОСВ счёта. Проверьте, что выбран тот тип '
+                     'регистра, который соответствует выгрузке.')
         
         # Проверка на наличие значения "Субконто"
         first_col = df.iloc[:, col_idx].astype(str)
         if not (first_col == 'Субконто').any():
-            raise RegisterProcessingError('Файл не является ОСВ счета 1с.')
+            raise RegisterNotRecognizedError(
+                'Файл не является ОСВ счета 1с.',
+                hint='В выгрузке нет строки заголовков со словом «Субконто».')
         
         df = processor._process_header(df, header_row_idx, rename_columns=True)
         
@@ -1306,7 +1317,10 @@ class AccountOSV_UPPFileProcessor(BaseAccountOSVProcessor):
         
         # Создание контрольной таблицы
         if df[df['Субконто'] == 'Итого'][desired_order].empty:
-            raise RegisterProcessingError('Нет значений по строке Итого')
+            raise RegisterStructureError(
+                'В выгрузке нет значений по строке «Итого».',
+                hint='Сверка оборотов до и после обработки считается по строке «Итого». '
+                     'Без неё достоверно проверить результат невозможно.')
         
         df_for_check = df[df['Субконто'] == 'Итого'][['Субконто'] + desired_order_not_with_suff].copy().tail(2).iloc[[0]]
         df_for_check[desired_order_not_with_suff] = df_for_check[desired_order_not_with_suff].astype(float).fillna(0)
@@ -1432,12 +1446,17 @@ class AccountOSV_NonUPPFileProcessor(BaseAccountOSVProcessor):
         col_idx, header_row_idx = processor._find_header_column(df, 'счет')
         
         if col_idx is None or header_row_idx is None:
-            raise RegisterProcessingError('Не найден столбец с "Счет" в первых 30 строках.')
+            raise RegisterStructureError(
+                'Не найден столбец с "Счет" в первых 30 строках.',
+                hint='Похоже, это не ОСВ счёта. Проверьте, что выбран тот тип '
+                     'регистра, который соответствует выгрузке.')
         
         # Проверка на наличие значения "Счет"
         first_col = df.iloc[:, col_idx].astype(str)
         if not (first_col == 'Счет').any():
-            raise RegisterProcessingError('Файл не является ОСВ счета 1с.')
+            raise RegisterNotRecognizedError(
+                'Файл не является ОСВ счета 1с.',
+                hint='В выгрузке нет строки заголовков со словом «Счет».')
         
         df = processor._process_header(df, header_row_idx, rename_columns=True)
         
@@ -1481,7 +1500,10 @@ class AccountOSV_NonUPPFileProcessor(BaseAccountOSVProcessor):
         
         # Создание контрольной таблицы
         if df[df['Счет'] == 'Итого'][desired_order].empty:
-            raise RegisterProcessingError('Нет значений по строке Итого')
+            raise RegisterStructureError(
+                'В выгрузке нет значений по строке «Итого».',
+                hint='Сверка оборотов до и после обработки считается по строке «Итого». '
+                     'Без неё достоверно проверить результат невозможно.')
         
         df_for_check = df[df['Счет'] == 'Итого'][['Счет'] + desired_order_not_with_suff].copy().tail(2).iloc[[0]]
         df_for_check[desired_order_not_with_suff] = df_for_check[desired_order_not_with_suff].astype(float).fillna(0)

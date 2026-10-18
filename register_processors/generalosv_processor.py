@@ -5,13 +5,14 @@ Created on Mon Aug 25 11:23:20 2025
 @author: a.karabedyan
 """
 
+from abc import ABC, abstractmethod
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
-from abc import ABC, abstractmethod
 
+from flatregister.errors import RegisterEmptyError, RegisterNotRecognizedError, RegisterStructureError
 from register_processors.class_processor import FileProcessor
-from custom_errors import RegisterProcessingError
 from support_functions import fix_1c_excel_case, get_keep_subaccounts
 
 
@@ -162,12 +163,17 @@ class GeneralOSV_UPPFileProcessor(BaseOSVFileProcessor):
                 account_col_idx = col_idx
                 break
         if account_col_idx is None:
-            raise RegisterProcessingError('Не найден столбец с "Счет" в первых 30 строках.')
+            raise RegisterStructureError(
+                'Не найден столбец с "Счет" в первых 30 строках.',
+                hint='Похоже, это не ОСВ. Проверьте, что выбран тот тип регистра, '
+                     'который соответствует выгрузке.')
 
         first_col = df.iloc[:, account_col_idx].astype(str)
         mask = first_col == 'Счет'
         if not mask.any():
-            raise RegisterProcessingError('Файл не является ОСВ 1с.')
+            raise RegisterNotRecognizedError(
+                'Файл не является ОСВ 1с.',
+                hint='В выгрузке нет строки заголовков со словом «Счет».')
 
         date_row_idx = mask.idxmax()
         df.columns = df.iloc[date_row_idx]
@@ -180,7 +186,10 @@ class GeneralOSV_UPPFileProcessor(BaseOSVFileProcessor):
         mask_name = first_row == 'Наименование'
         cols_name_acc = np.where(mask_name)[0]
         if cols_name_acc.size == 0:
-            raise RegisterProcessingError('ОСВ выгружена без наименований счета')
+            raise RegisterStructureError(
+                'ОСВ выгружена без наименований счёта.',
+                hint='В выгрузке нет столбца «Наименование». Выгрузите ОСВ заново '
+                     'через меню «Сохранить как» в 1С.')
         col_index_name_acc = cols_name_acc[0]
 
         required_cols = [
@@ -190,7 +199,10 @@ class GeneralOSV_UPPFileProcessor(BaseOSVFileProcessor):
         ]
         for col in required_cols:
             if col not in df.columns:
-                raise RegisterProcessingError(f'Отсутствует обязательный столбец: {col}')
+                raise RegisterStructureError(
+                    f'Отсутствует обязательный столбец: {col}',
+                    hint='Столбец нужен для разноса оборотов по дебету и кредиту. '
+                         'Проверьте, что в 1С выгружена ОСВ с оборотом за период.')
 
         cols = df.columns.tolist()
         target_idx_a = df.columns.get_loc('Сальдо на начало периода')
@@ -251,10 +263,15 @@ class GeneralOSV_UPPFileProcessor(BaseOSVFileProcessor):
         df = df.iloc[1:]  # удаляем строку "Дебет Кредит ..."
 
         if df['Уровень'].max() == 0:
-            raise RegisterProcessingError('ОСВ пустая.')
+            raise RegisterEmptyError(
+                'ОСВ пустая.',
+                hint='В выгрузке нет ни одной строки с данными.')
 
         if df['Уровень'].isnull().any() or df['Курсив'].isnull().any():
-            raise RegisterProcessingError('Найдены пустые значения в столбцах Уровень или Курсив.')
+            raise RegisterStructureError(
+                'Найдены пустые значения в столбцах Уровень или Курсив.',
+                hint='В Excel не выставлены уровни группировки (знаки «+» и «−» слева). '
+                     'Выгрузите регистр заново через меню «Сохранить как» в 1С.')
 
         df.drop(columns=['Курсив'], errors='ignore', inplace=True)
         return df
@@ -277,12 +294,17 @@ class GeneralOSV_NonUPPFileProcessor(BaseOSVFileProcessor):
                 account_col_idx = col_idx
                 break
         if account_col_idx is None:
-            raise RegisterProcessingError('Не найден столбец с "Счет" в первых 30 строках.')
+            raise RegisterStructureError(
+                'Не найден столбец с "Счет" в первых 30 строках.',
+                hint='Похоже, это не ОСВ. Проверьте, что выбран тот тип регистра, '
+                     'который соответствует выгрузке.')
 
         first_col = df.iloc[:, account_col_idx].astype(str)
         mask = first_col == 'Счет'
         if not mask.any():
-            raise RegisterProcessingError('Файл не является ОСВ 1с.')
+            raise RegisterNotRecognizedError(
+                'Файл не является ОСВ 1с.',
+                hint='В выгрузке нет строки заголовков со словом «Счет».')
 
         date_row_idx = mask.idxmax()
         df.columns = df.iloc[date_row_idx]
@@ -311,10 +333,15 @@ class GeneralOSV_NonUPPFileProcessor(BaseOSVFileProcessor):
         df = df.iloc[1:]  # удаляем строку с "Дебет Кредит ..."
 
         if df['Уровень'].max() == 0:
-            raise RegisterProcessingError('ОСВ пустая.')
+            raise RegisterEmptyError(
+                'ОСВ пустая.',
+                hint='В выгрузке нет ни одной строки с данными.')
 
         if df['Уровень'].isnull().any() or df['Курсив'].isnull().any():
-            raise RegisterProcessingError('Найдены пустые значения в столбцах Уровень или Курсив.')
+            raise RegisterStructureError(
+                'Найдены пустые значения в столбцах Уровень или Курсив.',
+                hint='В Excel не выставлены уровни группировки (знаки «+» и «−» слева). '
+                     'Выгрузите регистр заново через меню «Сохранить как» в 1С.')
 
         df.drop(columns=['Курсив'], errors='ignore', inplace=True)
         return df

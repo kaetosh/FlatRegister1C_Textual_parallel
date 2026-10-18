@@ -5,12 +5,13 @@ Created on Mon Aug 25 12:20:46 2025
 @author: a.karabedyan
 """
 
-import numpy as np
-import pandas as pd
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
+
+from flatregister.errors import RegisterEmptyError, RegisterStructureError
 from register_processors.class_processor import FileProcessor
-from custom_errors import RegisterProcessingError
 from support_functions import fix_1c_excel_case
 
 pd.set_option('future.no_silent_downcasting', True)
@@ -45,7 +46,10 @@ class Posting_UPPFileProcessor(FileProcessor):
             if not (df['Содержание'] == 'Количество').any():
                 return pd.DataFrame()
         except KeyError:
-            raise RegisterProcessingError('Не найден или пустой столбец Содержание.')
+            raise RegisterStructureError(
+                'Не найден или пустой столбец «Содержание».',
+                hint='Похоже, это не отчёт по проводкам из 1С УПП. Проверьте, что '
+                     'выбран тот тип регистра, который соответствует выгрузке.')
             
         df_with_count = df[df['Содержание'] == 'Количество'].copy()
         
@@ -73,7 +77,10 @@ class Posting_UPPFileProcessor(FileProcessor):
             if not (df['Содержание'] == 'Валюта').any():
                 return pd.DataFrame()
         except KeyError:
-            raise RegisterProcessingError('Не найден или пустой столбец Содержание.')
+            raise RegisterStructureError(
+                'Не найден или пустой столбец «Содержание».',
+                hint='Похоже, это не отчёт по проводкам из 1С УПП. Проверьте, что '
+                     'выбран тот тип регистра, который соответствует выгрузке.')
             
         df_with_currency = df[df['Содержание'] == 'Валюта'].copy()
         
@@ -113,7 +120,9 @@ class Posting_UPPFileProcessor(FileProcessor):
         # df = df[~df['Содержание'].isin(['Количество', 'Валюта'])]
         
         if df.empty:
-            raise RegisterProcessingError("Отчет по проводкам 1с пустой в файле, обработка невозможна.")
+            raise RegisterEmptyError(
+                'Отчёт по проводкам в файле пустой.',
+                hint='В выгрузке нет ни одной строки с данными.')
 
         # Подготовка к pivot
         df = df.fillna({'Содержание': '', 'Субконто Дт': '', 'Субконто Кт': ''})
@@ -279,7 +288,10 @@ class Posting_NonUPPFileProcessor(FileProcessor):
         # Поиск строки с заголовками
         period_rows = df.index[df.iloc[:, 0] == 'Период'].tolist()
         if not period_rows:
-            raise RegisterProcessingError('Не найден заголовок Период в шапке таблицы')
+            raise RegisterStructureError(
+                'Не найден заголовок «Период» в шапке таблицы.',
+                hint='В выгрузке нет строки с заголовком «Период» — по ней определяется '
+                     'шапка таблицы. Похоже, это не отчёт по проводкам.')
             
         header_row = period_rows[0]
         df.columns = df.iloc[header_row]
@@ -382,6 +394,8 @@ class Posting_NonUPPFileProcessor(FileProcessor):
         df.insert(0, 'Имя_файла', file_path.name)
         
         if df.empty:
-            raise RegisterProcessingError("Отчет по проводкам 1с пустой, обработка невозможна.")
+            raise RegisterEmptyError(
+                'Отчёт по проводкам пустой.',
+                hint='В выгрузке нет ни одной строки с данными.')
             
         return df, self.table_for_check
