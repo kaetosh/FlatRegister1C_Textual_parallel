@@ -1,0 +1,73 @@
+[project]
+name = "flatregister1c"
+version = "0.6.0"
+description = "Обработчик регистров 1С 6-в-1: выгрузки регистров 1С в плоскую таблицу для Excel"
+requires-python = ">=3.11,<3.14"
+
+# Версии выверены на прогоне реальных выгрузок 1С (pandas 3.0.1).
+# Менять только вместе с прогоном tools/regress.py — иначе расхождения в числах
+# невозможно отличить от последствий смены версии.
+dependencies = [
+    "et_xmlfile==2.0.0",
+    "linkify-it-py==2.0.3",
+    "markdown-it-py==4.0.0",
+    "mdit-py-plugins==0.5.0",
+    "mdurl==0.1.2",
+    "numpy==2.4.2",
+    "openpyxl==3.1.5",
+    "pandas==3.0.1",
+    "platformdirs==4.9.2",
+    "Pygments==2.19.2",
+    "python-dateutil==2.9.0.post0",
+    "pywin32==311",
+    "rich==14.3.3",
+    "segno==1.6.6",
+    "six==1.17.0",
+    "textual==8.0.0",
+    "typing_extensions==4.15.0",
+    "tzdata==2025.3",
+    "uc-micro-py==1.0.3",
+    "xlwings==0.33.20",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+# Нужен только для сборки .exe, в разработке не нужен.
+build = [
+    "Nuitka==4.0.1",
+]
+
+# Проект не собирается как пакет: main.py лежит в корне, этого требует Nuitka.
+# Импорт модулей из корня работает за счёт pythonpath в pytest и cwd в uv run.
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+markers = [
+    # Тесты, которым нужен установленный Excel (xlwings). Скипаются, если Excel недоступен.
+    "requires_excel: поднимает настоящий Excel через xlwings",
+    # Медленные тесты на полном наборе фикстур.
+    "slow: долгий прогон",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+exclude = ["__pycache__", ".venv", ".codebase-memory"]
+
+[tool.ruff.lint]
+# Базовый набор для Сессии 0: настоящие ошибки + неиспользуемый код + порядок импортов.
+# Более строгие правила (B, UP, SIM, ...) включаются по мере чистки — по одной сессии.
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+# Скрипты в tools/ обязаны подмешивать корень проекта в sys.path до импорта
+# приложения — иначе их нельзя запускать из произвольного каталога.
+"tools/*.py" = ["E402"]

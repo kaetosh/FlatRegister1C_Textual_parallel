@@ -1,0 +1,27 @@
+# Артефакт индекса codebase-memory-mcp (локальный, генерируется при индексации)
+.codebase-memory/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Окружение и кэш сборок
+.venv/
+.ruff_cache/
+.pytest_cache/
+build/
+dist/
+*.spec
+
+# Логи приложения
+logs/
+*.log
+
+# Регрессионные отчёты tools/regress.py: эталон (tools/baseline.json) в git,
+# сравнительные прогоны (tools/after.json и подобные) — нет
+tools/after*.json
+tools/before*.json
+*_regress_*.json
+
+# Сборки .exe
+*.exe
