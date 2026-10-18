@@ -21,7 +21,7 @@ git и `.venv` на диске. Поэтому новая сессия начи�
 cd C:\Users\karab\Yandex.Disk\automation_processing_1C\Projects\FlatRegister1C_Textual_parallel
 git branch --show-current     # ожидается refactor/s0-safety-net
 git status --short            # ожидается пусто
-uv run pytest                 # ожидается 102 passed, 2 xfailed
+uv run pytest                 # ожидается 103 passed, 1 xfailed
 ```
 
 Если что-то из этого не сходится — **сначала разобраться, потом начинать**.
