@@ -1,0 +1,3580 @@
+[
+  {
+    "file": "accounts_osv\\214f044b2f.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 6,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Level_3",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Количество_Дебет_конец",
+          "Количество_Дебет_начало",
+          "Количество_Дебет_оборот",
+          "Количество_Кредит_конец",
+          "Количество_Кредит_начало",
+          "Количество_Кредит_оборот",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 6,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Level_3",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Количество_Дебет_конец",
+      "Количество_Дебет_начало",
+      "Количество_Дебет_оборот",
+      "Количество_Кредит_конец",
+      "Количество_Кредит_начало",
+      "Количество_Кредит_оборот",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\194ecc4093.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 16,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": -0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": -0.0
+    },
+    "rows": 16,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\271ee48e08.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 17,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": -0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": -0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": -0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": -0.0
+    },
+    "rows": 17,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\77f1175db4.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 13,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 13,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\6db1578ac5.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 13,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 13,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\608c84470d.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\022935baec.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\8cc6c1c239.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\341f850290.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\6b1019f30c.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 4,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 4,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\d3999ef694.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 3,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": -0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": -0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 3,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\58146368f8.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\63744e3105.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 43,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 43,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\7ce54a6924.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 40,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": -0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": -0.0
+    },
+    "rows": 40,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\0ab502791b.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "DELTA",
+        "rows": 2,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": -241594556.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": -241594556.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "DELTA",
+    "deltas": {
+      "Сальдо_начало_разница": -241594556.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": -241594556.0
+    },
+    "rows": 2,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\23631415dc.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "DELTA",
+        "rows": 2,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": -241594556.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "DELTA",
+    "deltas": {
+      "Сальдо_начало_разница": -241594556.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 2,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\9c57fc74b5.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 6,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 6,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\f5e9646d82.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 6,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": -0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": -0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 6,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\d0e9a83727.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\ce57cb82ca.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\14fdc8a7d2.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 7,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 7,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\7d0afbe591.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\6907c8c0ec.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\0d8dae9dc9.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\c6afccb8b4.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\0e3a9eba87.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 5,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Level_3",
+          "Вид связи КА за период",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Конец  периода для вида связи",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Начало периода  для вида связи",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 5,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Level_3",
+      "Вид связи КА за период",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Конец  периода для вида связи",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Начало периода  для вида связи",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\386a3a145c.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 6,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Level_3",
+          "Вид связи КА за период",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Конец  периода для вида связи",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Начало периода  для вида связи",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 6,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Level_3",
+      "Вид связи КА за период",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Конец  периода для вида связи",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Начало периода  для вида связи",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\68b2300d80.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1895,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Вид связи КА за период",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Конец  периода для вида связи",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Начало периода  для вида связи",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": -0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": -0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1895,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Вид связи КА за период",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Конец  периода для вида связи",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Начало периода  для вида связи",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\b7d5076571.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 913,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Вид связи КА за период",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Конец  периода для вида связи",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Начало периода  для вида связи",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 913,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Вид связи КА за период",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Конец  периода для вида связи",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Начало периода  для вида связи",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\397296263e.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1941,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Level_3",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": -0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": -0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1941,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Level_3",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\eb2365cc20.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 326,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Вид связи КА за период",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Конец  периода для вида связи",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Начало периода  для вида связи",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 326,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Вид связи КА за период",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Конец  периода для вида связи",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Начало периода  для вида связи",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\76bacb57cd.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 239,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Вид связи КА за период",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Конец  периода для вида связи",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Начало периода  для вида связи",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": -0.0,
+          "Сальдо_конец_разница": -0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": -0.0,
+      "Сальдо_конец_разница": -0.0
+    },
+    "rows": 239,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Вид связи КА за период",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Конец  периода для вида связи",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Начало периода  для вида связи",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\4c8eae4fb2.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 18,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Вид связи КА за период",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Конец  периода для вида связи",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Начало периода  для вида связи",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": -0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": -0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 18,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Вид связи КА за период",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Конец  периода для вида связи",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Начало периода  для вида связи",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\7b13a72629.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 13,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Вид связи КА за период",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Конец  периода для вида связи",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Начало периода  для вида связи",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": -0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": -0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 13,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Вид связи КА за период",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Конец  периода для вида связи",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Начало периода  для вида связи",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\5b477c526a.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 6,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Вид связи КА за период",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Конец  периода для вида связи",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Начало периода  для вида связи",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 6,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Вид связи КА за период",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Конец  периода для вида связи",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Начало периода  для вида связи",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\aa916aa05a.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 4,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Вид связи КА за период",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Конец  периода для вида связи",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Начало периода  для вида связи",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 4,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Вид связи КА за период",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Конец  периода для вида связи",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Начало периода  для вида связи",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\307098a0c4.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 13,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 13,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\cebcb945c8.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 12,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 12,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\1c1bc870c1.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\1f6ffb539e.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\9d0a23d2af.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\55cb1954e5.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\79b7fce038.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Вид связи КА за период",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Конец  периода для вида связи",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Начало периода  для вида связи",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Вид связи КА за период",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Конец  периода для вида связи",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Начало периода  для вида связи",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\78ecb7c056.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Вид связи КА за период",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Конец  периода для вида связи",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Начало периода  для вида связи",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Вид связи КА за период",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Конец  периода для вида связи",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Начало периода  для вида связи",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\9316bf3d83.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 7,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Level_3",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": -0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": -0.0
+    },
+    "rows": 7,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Level_3",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\860d88de4c.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 2,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Level_3",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": -0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": -0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 2,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Level_3",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\b2bb88f0c3.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 49,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Level_3",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": -0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": -0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 49,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Level_3",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\4667b6de11.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 33,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Level_3",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": -0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": -0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 33,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Level_3",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\d9956a5364.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 486,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Level_3",
+          "Вид связи КА за период",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Конец  периода для вида связи",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Начало периода  для вида связи",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": -0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": -0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": -0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": -0.0
+    },
+    "rows": 486,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Level_3",
+      "Вид связи КА за период",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Конец  периода для вида связи",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Начало периода  для вида связи",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\1e873d6b26.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 343,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Level_3",
+          "Вид связи КА за период",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Конец  периода для вида связи",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Начало периода  для вида связи",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": -0.0,
+          "Оборот_разница": -0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": -0.0,
+      "Оборот_разница": -0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 343,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Level_3",
+      "Вид связи КА за период",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Конец  периода для вида связи",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Начало периода  для вида связи",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\cc44f33ce9.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\e925b4a235.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\1082eb76a8.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\6397704faa.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\fec1ccd2de.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\82382cf067.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\410740bb30.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\60d9ea3293.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 560,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": -0.0,
+          "Оборот_разница": -0.0,
+          "Сальдо_конец_разница": -0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": -0.0,
+      "Оборот_разница": -0.0,
+      "Сальдо_конец_разница": -0.0
+    },
+    "rows": 560,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\0dff29d797.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 310,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": -0.0,
+          "Оборот_разница": -0.0,
+          "Сальдо_конец_разница": -0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": -0.0,
+      "Оборот_разница": -0.0,
+      "Сальдо_конец_разница": -0.0
+    },
+    "rows": 310,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "accounts_osv\\2d49f5d4ac.xlsx",
+    "detected": [
+      "accountosv#0 AccountOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "accountosv#0 AccountOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Субконто"
+        ],
+        "deltas": {
+          "Сальдо_начало_разница": 0.0,
+          "Оборот_разница": 0.0,
+          "Сальдо_конец_разница": 0.0
+        }
+      }
+    ],
+    "chosen": "accountosv#0 AccountOSV_UPPFileProcessor",
+    "register": "accountosv",
+    "processor": "AccountOSV_UPPFileProcessor",
+    "status": "OK",
+    "deltas": {
+      "Сальдо_начало_разница": 0.0,
+      "Оборот_разница": 0.0,
+      "Сальдо_конец_разница": 0.0
+    },
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Субконто"
+    ]
+  },
+  {
+    "file": "analisys\\0c749aa7d6.xlsx",
+    "detected": [
+      "analisys#0 Analisys_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "analisys#0 Analisys_UPPFileProcessor",
+        "status": "OK",
+        "rows": 9368,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Level_3",
+          "Level_4",
+          "Level_5",
+          "Level_6",
+          "Level_7",
+          "Аналитика",
+          "В дебет счетов",
+          "Исх.файл",
+          "Корр_счет",
+          "С кред. счетов",
+          "Субконто_корр_счета",
+          "Субсчет"
+        ]
+      }
+    ],
+    "chosen": "analisys#0 Analisys_UPPFileProcessor",
+    "register": "analisys",
+    "processor": "Analisys_UPPFileProcessor",
+    "status": "OK",
+    "rows": 9368,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Level_3",
+      "Level_4",
+      "Level_5",
+      "Level_6",
+      "Level_7",
+      "Аналитика",
+      "В дебет счетов",
+      "Исх.файл",
+      "Корр_счет",
+      "С кред. счетов",
+      "Субконто_корр_счета",
+      "Субсчет"
+    ]
+  },
+  {
+    "file": "analisys\\3534f874e4.xlsx",
+    "detected": [
+      "analisys#0 Analisys_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "analisys#0 Analisys_UPPFileProcessor",
+        "status": "OK",
+        "rows": 91,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Level_3",
+          "Level_4",
+          "Level_5",
+          "Level_6",
+          "Level_7",
+          "Аналитика",
+          "В дебет счетов",
+          "В дебет счетов_КОЛ",
+          "Исх.файл",
+          "Корр_счет",
+          "С кред. счетов",
+          "С кред. счетов_КОЛ",
+          "Субконто_корр_счета",
+          "Субсчет"
+        ]
+      }
+    ],
+    "chosen": "analisys#0 Analisys_UPPFileProcessor",
+    "register": "analisys",
+    "processor": "Analisys_UPPFileProcessor",
+    "status": "OK",
+    "rows": 91,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Level_3",
+      "Level_4",
+      "Level_5",
+      "Level_6",
+      "Level_7",
+      "Аналитика",
+      "В дебет счетов",
+      "В дебет счетов_КОЛ",
+      "Исх.файл",
+      "Корр_счет",
+      "С кред. счетов",
+      "С кред. счетов_КОЛ",
+      "Субконто_корр_счета",
+      "Субсчет"
+    ]
+  },
+  {
+    "file": "analisys\\e0876ff9f6.xlsx",
+    "detected": [
+      "analisys#0 Analisys_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "analisys#0 Analisys_UPPFileProcessor",
+        "status": "OK",
+        "rows": 8242,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Level_3",
+          "Level_4",
+          "Level_5",
+          "Level_6",
+          "Level_7",
+          "Аналитика",
+          "В дебет счетов",
+          "Исх.файл",
+          "Корр_счет",
+          "С кред. счетов",
+          "Субконто_корр_счета",
+          "Субсчет"
+        ]
+      }
+    ],
+    "chosen": "analisys#0 Analisys_UPPFileProcessor",
+    "register": "analisys",
+    "processor": "Analisys_UPPFileProcessor",
+    "status": "OK",
+    "rows": 8242,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Level_3",
+      "Level_4",
+      "Level_5",
+      "Level_6",
+      "Level_7",
+      "Аналитика",
+      "В дебет счетов",
+      "Исх.файл",
+      "Корр_счет",
+      "С кред. счетов",
+      "Субконто_корр_счета",
+      "Субсчет"
+    ]
+  },
+  {
+    "file": "analisys\\ed34fd9876.xlsx",
+    "detected": [
+      "analisys#0 Analisys_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "analisys#0 Analisys_UPPFileProcessor",
+        "status": "OK",
+        "rows": 1,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Level_3",
+          "Level_4",
+          "Аналитика",
+          "В дебет счетов",
+          "Исх.файл",
+          "Корр_счет",
+          "С кред. счетов",
+          "Субконто_корр_счета",
+          "Субсчет"
+        ]
+      }
+    ],
+    "chosen": "analisys#0 Analisys_UPPFileProcessor",
+    "register": "analisys",
+    "processor": "Analisys_UPPFileProcessor",
+    "status": "OK",
+    "rows": 1,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Level_3",
+      "Level_4",
+      "Аналитика",
+      "В дебет счетов",
+      "Исх.файл",
+      "Корр_счет",
+      "С кред. счетов",
+      "Субконто_корр_счета",
+      "Субсчет"
+    ]
+  },
+  {
+    "file": "general_osv\\244fbc87bf.xlsx",
+    "detected": [
+      "generalosv#0 GeneralOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "generalosv#0 GeneralOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 123,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Наименование",
+          "Счет"
+        ]
+      }
+    ],
+    "chosen": "generalosv#0 GeneralOSV_UPPFileProcessor",
+    "register": "generalosv",
+    "processor": "GeneralOSV_UPPFileProcessor",
+    "status": "OK",
+    "rows": 123,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Наименование",
+      "Счет"
+    ]
+  },
+  {
+    "file": "general_osv\\f97fc01e8b.xlsx",
+    "detected": [
+      "generalosv#0 GeneralOSV_UPPFileProcessor"
+    ],
+    "attempts": [
+      {
+        "variant": "generalosv#0 GeneralOSV_UPPFileProcessor",
+        "status": "OK",
+        "rows": 115,
+        "columns": [
+          "Level_0",
+          "Level_1",
+          "Level_2",
+          "Дебет_конец",
+          "Дебет_начало",
+          "Дебет_оборот",
+          "Исх.файл",
+          "Кредит_конец",
+          "Кредит_начало",
+          "Кредит_оборот",
+          "Наименование",
+          "Счет"
+        ]
+      }
+    ],
+    "chosen": "generalosv#0 GeneralOSV_UPPFileProcessor",
+    "register": "generalosv",
+    "processor": "GeneralOSV_UPPFileProcessor",
+    "status": "OK",
+    "rows": 115,
+    "columns": [
+      "Level_0",
+      "Level_1",
+      "Level_2",
+      "Дебет_конец",
+      "Дебет_начало",
+      "Дебет_оборот",
+      "Исх.файл",
+      "Кредит_конец",
+      "Кредит_начало",
+      "Кредит_оборот",
+      "Наименование",
+      "Счет"
+    ]
+  }
+]

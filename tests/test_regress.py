@@ -118,3 +118,43 @@ def test_пропавшая_строка_обнаруживается(dump_folde
 
     assert regress.assert_no_regression(tmp_path / "до.json",
                                         tmp_path / "после.json") == 1
+
+
+def test_имена_файлов_обезличиваются(dump_folder, tmp_path):
+    """В json-отчёт попадают хеши, а не названия.
+
+    Настоящие выгрузки называются вроде «Карточка счета 60.01 за 2025 г.
+    ООО Ромашка» — это бухгалтерские данные клиента, и эталон предназначен
+    для коммита в репозиторий.
+    """
+    records = _run(dump_folder, tmp_path / "отчёт.json")
+    anonymized = regress.anonymize(records)
+
+    assert len(anonymized) == len(records)
+    for record in anonymized:
+        assert ".xlsx" in record["file"]
+        assert "выгрузка_" not in record["file"], record["file"]
+
+    # Подпапка сохраняется, если она была: по ней видно, к какому регистру
+    # относится файл.
+    nested = regress.anonymize([{"file": "_карточки\\пример.xlsx"}])
+    assert nested[0]["file"].startswith("_карточки"), nested[0]["file"]
+
+    # Один и тот же файл обязан давать один и тот же ключ
+    assert anonymized[0]["file"] == \
+        regress.anonymize([records[0]])[0]["file"]
+    # И разные файлы — разные ключи
+    assert len({r["file"] for r in anonymized}) == len({r["file"] for r in records})
+
+
+def test_обезличивание_не_ломает_сравнение(dump_folder, tmp_path):
+    """Сравнение эталонов должно работать по обезличенным ключам."""
+    _run(dump_folder, tmp_path / "до.json")
+    _run(dump_folder, tmp_path / "после.json")
+
+    before = json.loads((tmp_path / "до.json").read_text(encoding="utf-8"))
+    after = json.loads((tmp_path / "после.json").read_text(encoding="utf-8"))
+
+    assert {r["file"] for r in before} == {r["file"] for r in after}
+    assert regress.assert_no_regression(tmp_path / "до.json",
+                                        tmp_path / "после.json") == 0

@@ -36,6 +36,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 import time
@@ -64,6 +65,36 @@ SKIP_PARTS = {"_OUTPUT_DATA", "_archive", "_REFERENCE_DATA", "_corrections",
               "__pycache__", "node_modules", ".git", ".idea", ".venv"}
 
 STATUS_RANK = {"OK": 0, "DELTA": 1, "FAIL": 2}
+
+
+def _stable_id(text: str) -> str:
+    """Короткий устойчивый идентификатор файла.
+
+    Имя выгрузки из 1С содержит название организации, номер счёта и период —
+    то есть то, что не должно попасть в репозиторий. Хеш даёт тот же ключ
+    между прогонами (значит, сравнение работает), но не раскрывает содержание.
+    """
+    return hashlib.sha1(text.encode("utf-8")).hexdigest()[:10]
+
+
+def anonymize(records: list) -> list:
+    """Заменяет имена файлов на хеши.
+
+    Эталон предназначен для коммита в репозиторий, а названия компаний и
+    номера счетов — это бухгалтерские данные клиентов. Консольный отчёт
+    остаётся читаемым: он печатается до обезличивания, поэтому по сообщению
+    «[FAIL] <имя файла>» всегда видно, о каком файле речь.
+    """
+    result = []
+    for record in records:
+        copy = dict(record)
+        name = record.get("file", "")
+        parent = Path(name).parent
+        stem = Path(name).stem
+        anonymized = f"{_stable_id(stem)}.xlsx"
+        copy["file"] = str(parent / anonymized) if str(parent) != "." else anonymized
+        result.append(copy)
+    return result
 
 
 def deepest_project_frame(tb) -> str:
@@ -368,7 +399,11 @@ def main() -> int:
     parser.add_argument("--root", help="папка с .xlsx для прогона")
     parser.add_argument("--mode", choices=["detect", "process"], default="process",
                         help="detect — только определить регистр, без Excel")
-    parser.add_argument("--out", help="куда сохранить отчёт в json")
+    parser.add_argument("--out", help="куда сохранить отчёт в json "
+                                      "(имена файлов обезличиваются)")
+    parser.add_argument("--raw-names", action="store_true",
+                        help="не обезличивать имена файлов в json-отчёте. "
+                             "Небезопасно для отчёта, который попадёт в git")
     parser.add_argument("--only-register",
                         help="прогнать только этот регистр: card|posting|analisys|"
                              "turnover|accountosv|generalosv")
@@ -409,9 +444,11 @@ def main() -> int:
     report(records, root, args.mode, time.perf_counter() - started)
 
     if args.out:
-        Path(args.out).write_text(json.dumps(records, ensure_ascii=False, indent=2),
+        to_write = records if args.raw_names else anonymize(records)
+        Path(args.out).write_text(json.dumps(to_write, ensure_ascii=False, indent=2),
                                   encoding="utf-8")
-        print(f"\nотчёт: {args.out}")
+        note = "" if args.raw_names else "  (имена файлов обезличены)"
+        print(f"\nотчёт: {args.out}{note}")
 
     return 0
 
