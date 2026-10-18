@@ -404,6 +404,14 @@ class FileProcessor(ABC):
                     # Проверяем, есть ли в столбце и субсчет, и субконто
                     if self._is_accounting_code_vectorized(df[i]).nunique() == 2:
                         lm = int(i.split('_')[-1])
+
+                        # Сдвиг переносит значение из Level_{lm-1} в Level_{lm}, поэтому исходная
+                        # колонка обязана содержать счет. Иначе вертикальный сдвиг ломает неверно
+                        # распознанный уровень: например инвентарный номер "59" считается счетом
+                        # (любое число до 2 цифр), и весь блок уровней уезжает вправо.
+                        if lm == 0 or not self._is_accounting_code_vectorized(df[list_lev[lm - 1]]).any():
+                            continue
+
                         new_list_lev = list_lev[lm:]
                         
                         
