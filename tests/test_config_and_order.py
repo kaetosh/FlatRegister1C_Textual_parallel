@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Конфигурация и порядок колонок.
 
-Конфигурация читается из файла ``config.json`` в текущем каталоге, поэтому
+Конфигурация читается по пути из ``FLATREGISTER_CONFIG_PATH``, поэтому
 фикстура ``isolated_config`` уводит тест во временную папку. Здесь же
 проверяется, что ``requirements.txt`` не разъехался с ``pyproject.toml``:
 две независимые копии одного списка версий разъезжаются гарантированно.
@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -50,6 +51,41 @@ def test_битый_конфиг_не_теряет_молча(isolated_config, c
 
     assert config == DEFAULT_CONFIG
     assert any("повреждён" in record.message for record in caplog.records)
+
+
+def test_битый_конфиг_остаётся_в_бэкапе(isolated_config):
+    """Перед сбросом настроек рядом остаётся копия — данные не исчезают."""
+    broken_text = "{ это не json"
+    isolated_config.write_text(broken_text, encoding="utf-8")
+    clear_config_cache()
+
+    read_config()
+
+    backups = list(isolated_config.parent.glob("config.json.bak-*"))
+    assert len(backups) == 1, backups
+    assert backups[0].read_text(encoding="utf-8") == broken_text
+    assert json.loads(isolated_config.read_text(encoding="utf-8")) == DEFAULT_CONFIG
+
+
+def test_путь_конфига_переопределяется_переменной(monkeypatch, tmp_path):
+    """FLATREGISTER_CONFIG_PATH нужен тестам и переносимым запускам."""
+    from flatregister.config import CONFIG_PATH_ENV, get_config_path
+
+    custom = tmp_path / "custom" / "settings.json"
+    monkeypatch.setenv(CONFIG_PATH_ENV, str(custom))
+
+    assert get_config_path() == custom
+
+
+def test_путь_конфига_не_зависит_от_текущего_каталога(monkeypatch, tmp_path):
+    """В режиме разработки настройки берутся из корня проекта, а не из cwd."""
+    from flatregister.config import CONFIG_PATH_ENV, get_config_path
+
+    monkeypatch.delenv(CONFIG_PATH_ENV, raising=False)
+    monkeypatch.delattr(__import__("sys"), "frozen", raising=False)
+    monkeypatch.chdir(tmp_path)
+
+    assert get_config_path() == PROJECT_ROOT / "config.json"
 
 
 def test_настройки_сохраняются(isolated_config):
@@ -139,12 +175,6 @@ def test_колонки_с_суффиксами_стоят_после_фикси
     ]
 
 
-@pytest.mark.xfail(
-    reason="S8: прочие колонки собираются через set(cols) - set(ordered_cols), "
-           "поэтому их порядок зависит от хеширования и меняется между прогонами. "
-           "На одних и тех же данных два запуска дают разный порядок колонок.",
-    strict=True,
-)
 def test_порядок_прочих_колонок_стабилен():
     """Прочие колонки обязаны идти в порядке появления в выгрузке."""
     columns = ["Значение1", "Значение2", "Значение3", "Значение4", "Значение5"]
@@ -155,3 +185,12 @@ def test_порядок_прочих_колонок_стабилен():
 
     assert first == columns
     assert second == columns
+
+
+def test_колонка_с_префиксом_без_номера_не_роняет_сортировку():
+    """``Level_`` без цифры раньше давал AttributeError в re.search(...).group(1)."""
+    frame = pd.DataFrame(columns=["Level_10", "Level_", "Level_2"])
+
+    result = list(sort_columns(frame, []).columns)
+
+    assert result == ["Level_2", "Level_10", "Level_"]

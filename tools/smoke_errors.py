@@ -108,8 +108,8 @@ with tempfile.TemporaryDirectory() as tmp:
         outcome = f"{type(error).__name__}: {error}"
 
     check("отказ не упал наружу сырым исключением",
-          handler.not_correct_files or "NoInputFilesError" in outcome, outcome)
-    for name, failure in handler.not_correct_files.items():
+          handler.result.failures or "NoInputFilesError" in outcome, outcome)
+    for name, failure in handler.result.failures.items():
         is_failure = isinstance(failure, FileFailure)
         check(f"отказ по {name} — FileFailure", is_failure, repr(failure))
         check(f"у {name} есть текст для пользователя",

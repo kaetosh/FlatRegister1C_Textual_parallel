@@ -22,6 +22,28 @@ _log = get_logger("excel_io")
 
 # Глобальные константы
 MAX_EXCEL_ROWS = 1_000_000
+MAX_SHEET_NAME_LENGTH = 31
+
+#: Символы, которые Excel запрещает в именах листов. ``[]`` разрешены в именах
+#: файлов Windows, но не в именах листов, поэтому имя файла может прийти
+#: «валидным» и всё равно сломать запись.
+INVALID_SHEET_CHARS = '[]:*?/\\'
+
+
+def sanitize_sheet_name(name: str, fallback: str = "Лист") -> str:
+    """Привести имя листа к допустимому Excel.
+
+    Заменяет запрещённые символы на ``_``, убирает хвостовые пробелы/апострофы,
+    подставляет запасное имя для пустой строки и обрезает до 31 символа.
+    Для обычных имён результат совпадает с прежним поведением.
+    """
+    text = str(name)
+    for char in INVALID_SHEET_CHARS:
+        text = text.replace(char, "_")
+    text = text.rstrip("'").strip()
+    if not text:
+        text = fallback
+    return text[:MAX_SHEET_NAME_LENGTH]
 
 
 def write_df_in_chunks(
@@ -43,7 +65,7 @@ def write_df_in_chunks(
         
         df.iloc[start:end].to_excel(
             writer,
-            sheet_name=sheet_name[:31],  # Ограничение длины имени листа
+            sheet_name=sanitize_sheet_name(sheet_name),
             index=False
         )
 

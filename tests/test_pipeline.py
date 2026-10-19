@@ -9,6 +9,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from flatregister.errors import FileFailure
@@ -26,8 +28,8 @@ def captured(monkeypatch):
     """Перехватывает итог пакетной обработки до записи в Excel.
 
     В папочном режиме результаты уходят в :class:`ResultCollector`, а не в
-    ``storage_processed_registers`` (тот остаётся пустым — это поле одиночного
-    режима). Подменяем сохранение, чтобы получить сам сборщик.
+    ``result.files`` (там лишь записи одиночного режима). Подменяем сохранение,
+    чтобы получить сам сборщик.
     """
     box = {}
 
@@ -92,16 +94,29 @@ def test_чужой_файл_отвергается_по_выбранному_р
 
 
 def test_все_регистры_имеют_описание_в_текстах():
-    """У каждого зарегистрированного регистра есть текст с требованиями.
+    """У каждой записи реестра есть текст требований.
 
     Проверка закрывает одну из четырёх точек, где раньше надо было что-то
     не забыть при добавлении регистра.
     """
-    from text import REQUIREMENTS
+    from flatregister.registry import REGISTER_SPEC
 
-    for register in FileProcessorFactory.REGISTER_PATTERNS:
-        assert register in REQUIREMENTS, f"нет текста для регистра {register}"
-        assert REQUIREMENTS[register].strip(), f"пустой текст для регистра {register}"
+    for register, entry in REGISTER_SPEC.items():
+        assert entry.requirements.strip(), f"пустой текст для регистра {register}"
+        assert entry.patterns, f"нет шаблонов заголовков для регистра {register}"
+        assert entry.column_order, f"нет порядка колонок для регистра {register}"
+
+
+def test_реестр_покрывает_все_нужные_поля():
+    """Добавление регистра — правка одной записи REGISTER_SPEC."""
+    from flatregister.registry import REGISTER_SPEC, select_options
+
+    assert len(select_options()) == len(REGISTER_SPEC)
+    for key, entry in REGISTER_SPEC.items():
+        assert entry.key == key
+        assert entry.title.strip()
+        assert {pattern.variant for pattern in entry.patterns} == {"upp", "not_upp"}
+        assert set(entry.column_order) == {"upp", "not_upp"}
 
 
 # --------------------------------------------------------------------------
@@ -116,7 +131,7 @@ def test_папка_из_двух_файлов_склеивается(out_dir, c
     handler = FileHandler()
     handler.handle_input(out_dir, "accountosv", _progress)
 
-    assert not handler.not_correct_files, handler.not_correct_files
+    assert not handler.result.failures, handler.result.failures
     frame, check = _frames(captured, "accountosv")
     assert not frame.empty
     assert set(frame["Исх.файл"]) == {"ООО Ромашка.xlsx", "ООО Вектор.xlsx"}
@@ -133,11 +148,11 @@ def test_плохой_файл_не_останавливает_папку(out_di
     handler = FileHandler()
     handler.handle_input(out_dir, "accountosv", _progress)
 
-    assert set(handler.not_correct_files) == {"мусор.xlsx"}
+    assert set(handler.result.failures) == {"мусор.xlsx"}
     frame, _ = _frames(captured, "accountosv")
     assert set(frame["Исх.файл"]) == {"хороший.xlsx"}
 
-    failure = handler.not_correct_files["мусор.xlsx"]
+    failure = handler.result.failures["мусор.xlsx"]
     assert isinstance(failure, FileFailure)
     assert failure.user_message
     assert "Traceback" not in failure.user_message
@@ -227,7 +242,7 @@ def test_последовательный_и_параллельный_режим
 
         handler = FileHandler(parallel=parallel)
         handler.handle_input(out_dir, "accountosv", _progress)
-        assert not handler.not_correct_files, handler.not_correct_files
+        assert not handler.result.failures, handler.result.failures
         return box["results"]
 
     sequential = run(parallel=False)
@@ -267,8 +282,8 @@ def test_одиночный_файл_кладётся_в_результат(out_
     handler = FileHandler()
     handler.handle_input(path, "card", _progress)
 
-    assert not handler.not_correct_files
-    assert set(handler.storage_processed_registers) == {"Карточка.xlsx"}
+    assert not handler.result.failures
+    assert set(handler.result.files) == {"Карточка.xlsx"}
 
 
 def test_отказ_в_одиночном_режиме_пробрасывается(out_dir):
@@ -280,3 +295,39 @@ def test_отказ_в_одиночном_режиме_пробрасывает�
         handler.handle_input(path, "card", _progress)
 
     assert "регистр" in caught.value.user_message.lower()
+
+
+def test_одиночный_режим_санитизирует_имя_листа(out_dir, monkeypatch):
+    """Имя файла с ``[]`` — валидное для Windows, но не для листа Excel."""
+    import pandas as pd
+
+    path = factories.card_upp(out_dir / "Карточка[1].xlsx")
+    opened = {}
+    monkeypatch.setattr(FileHandler, "_open_file", staticmethod(lambda p: opened.setdefault("path", p)))
+
+    handler = FileHandler()
+    handler.handle_input(path, "card", _progress)
+    handler._save_and_open_batch_result(_progress)
+
+    temp_path = opened["path"]
+    try:
+        with pd.ExcelFile(temp_path) as workbook:
+            assert workbook.sheet_names == ["Карточка_1_.xlsx"]
+    finally:
+        Path(temp_path).unlink(missing_ok=True)
+
+
+def test_сборщик_не_падает_на_неизвестном_регистре():
+    """Защита от KeyError: неизвестный ключ не роняет сборку результатов."""
+    import pandas as pd
+
+    from flatregister.pipeline.result_collector import ResultCollector
+    from tests.conftest import BareProcessor
+
+    collector = ResultCollector("неизвестный")
+    collector.add_result(BareProcessor, pd.DataFrame({"a": [1]}), pd.DataFrame())
+
+    results = collector.get_all_results()
+
+    assert not results["non_upp"][0].empty
+    assert results["analisys"][0].empty

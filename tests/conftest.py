@@ -3,10 +3,9 @@
 
 Две вещи здесь требуют внимания при чтении любого теста.
 
-**Конфигурация.** Она читается из файла ``config.json`` в текущем каталоге,
-поэтому тесты выполняются не из корня проекта, а из временной папки со своим
-``config.json``. Иначе тесты зависели бы от настроек, которые на машине
-разработчика меняют руками.
+**Конфигурация.** Путь к ней задаётся переменной окружения
+``FLATREGISTER_CONFIG_PATH`` и указывает во временную папку теста. Иначе тесты
+зависели бы от настроек, которые на машине разработчика меняют руками.
 
 **Excel.** Ветка xlwings включается сама собой, когда в одной строке выгрузки
 оборотов собраны все семь заголовков — а именно так выглядит настоящая выгрузка
@@ -37,7 +36,7 @@ def isolated_config(tmp_path, monkeypatch):
     config_path = tmp_path / "config.json"
     config_path.write_text(json.dumps(TEST_CONFIG, ensure_ascii=False, indent=4),
                            encoding="utf-8")
-    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("FLATREGISTER_CONFIG_PATH", str(config_path))
 
     from flatregister.config import clear_config_cache
 

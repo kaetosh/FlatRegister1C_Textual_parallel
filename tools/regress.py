@@ -54,6 +54,7 @@ from flatregister.config import clear_config_cache
 from flatregister.errors import describe_exception
 from flatregister.excel_io import fix_1c_excel_case
 from flatregister.pipeline.factory import FileProcessorFactory
+from flatregister.registry import REGISTER_SPEC
 
 # Порог, начиная с которого расхождение сумм считается настоящим.
 # Нули и -0.0 после округления до целых — обычное дело, а не тревога.
@@ -144,10 +145,10 @@ def detect_registers(path: Path) -> list:
     frame = pd.read_excel(fix_1c_excel_case(path), header=None, nrows=20)
     normalized = frame.map(lambda x: str(x).strip().lower() if pd.notna(x) else "")
     hits = []
-    for register, configs in FileProcessorFactory.REGISTER_PATTERNS.items():
-        for index, config in enumerate(configs):
-            if FileProcessorFactory._contains_pattern(normalized, config["pattern"]):
-                hits.append((register, index, config["processor"].__name__))
+    for register, entry in REGISTER_SPEC.items():
+        for index, pattern in enumerate(entry.patterns):
+            if FileProcessorFactory._contains_pattern(normalized, pattern.headers):
+                hits.append((register, index, pattern.processor.__name__))
     return hits
 
 
@@ -170,7 +171,7 @@ def try_variant(path: Path, register: str, index: int, class_name: str) -> dict:
     """Прогоняет один файл через один вариант обработчика."""
     attempt = {"variant": f"{register}#{index} {class_name}"}
     try:
-        processor = FileProcessorFactory.REGISTER_PATTERNS[register][index]["processor"]()
+        processor = REGISTER_SPEC[register].patterns[index].processor()
         result, check = processor.process_file(path)
         attempt["status"] = "OK"
         attempt["rows"] = int(len(result))

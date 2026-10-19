@@ -291,17 +291,17 @@ uv run python tools\regress.py --compare tools\baseline.json tools\after.json
 
 ### S8 — Пайплайн и конфиг
 
-- [ ] `REGISTER_SPEC` — один реестр вместо четырёх мест регистрации
+- [x] `REGISTER_SPEC` — один реестр вместо четырёх мест регистрации
       (`Select`, `REGISTER_PATTERNS`, `DESIRED_ORDER`, `REQUIREMENTS`)
-- [ ] `ResultCollector`: тип регистра в конструкторе, защита от `KeyError` в `DESIRED_ORDER`
-- [ ] один путь обработки вместо `_process_single_file` / `_process_single_file_consistently`
-- [ ] `ProcessingResult` вместо трёх параллельных словарей
+- [x] `ResultCollector`: тип регистра в конструкторе, защита от `KeyError` в `DESIRED_ORDER`
+- [x] один путь обработки вместо `_process_single_file` / `_process_single_file_consistently`
+- [x] `ProcessingResult` вместо трёх параллельных словарей
       (`not_correct_files`, `storage_processed_registers`, `check`)
-- [ ] `sort_columns`: детерминированный порядок «остальных» колонок (сейчас `set()`);
+- [x] `sort_columns`: детерминированный порядок «остальных» колонок (сейчас `set()`);
       защита от `re.search(...).group(1)` на колонке без числового суффикса
-- [ ] санитизация имён листов в режиме одного файла (`[]:*?/\`)
-- [ ] путь конфига рядом с `.exe` / `%APPDATA%` вместо текущего каталога
-- [ ] битый `config.json` → бэкап и предупреждение, а не молчаливый сброс настроек
+- [x] санитизация имён листов в режиме одного файла (`[]:*?/\`)
+- [x] путь конфига рядом с `.exe` / `%APPDATA%` вместо текущего каталога
+- [x] битый `config.json` → бэкап и предупреждение, а не молчаливый сброс настроек
 
 **Критерий готовности:** baseline не изменился; добавление регистра требует правки одного места.
 
@@ -345,7 +345,7 @@ flatregister/
     logging_setup.py             # rotating-лог рядом с .exe
     config.py                    # Config, пути, типизированный доступ
     excel_io.py                  # fix_1c_excel_case, write_df_in_chunks, открытие файла
-    column_order.py              # COLUMN_PREFIXES, sort_columns, DESIRED_ORDER
+    column_order.py              # COLUMN_PREFIXES, sort_columns
     dtypes.py                    # coerce_numeric/coerce_text + постусловие по типам
     hierarchy.py                 # общие примитивы уровней и счетов
     registry.py                  # REGISTER_SPEC — единый реестр 6 регистров
@@ -371,6 +371,58 @@ text.py  style.tcss  requirements.txt  # не трогаем
 ## Лог сессий
 
 _(записи добавляются снизу вверх)_
+
+### S8 — Пайплайн и конфиг (2026-10-19)
+
+**Сделано**
+
+Четыре разрозненные точки регистрации регистра сведены в один
+`flatregister/registry.py`. Поведение обработки не менялось — обе регрессии
+по реальным выгрузкам дают 0 регрессий.
+
+- `registry.py` — `REGISTER_SPEC` из шести `RegisterEntry`: заголовки обоих
+  вариантов, класс процессора, порядок колонок, текст требований, номер меню.
+  Порядок вставки сохранён прежним (`card`, `posting`, …), чтобы не изменить
+  порядок автоопределения; порядок меню задаётся явным `menu_number`
+- `factory.py` — распознавание идёт только по `REGISTER_SPEC`;
+  `REGISTER_PATTERNS` удалён. Неизвестный ключ даёт
+  `RegisterNotRecognizedError`, а не `KeyError`
+- `column_order.py` — `DESIRED_ORDER` удалён, порядок берётся из реестра.
+  «Остальные» колонки идут в порядке появления в кадре, а не через `set()`;
+  префикс без числового суффикса больше не роняет `re.search(...).group(1)`
+- `ResultCollector` — регистр передаётся в конструктор, порядок колонок
+  и маршрутизация (`upp` / `non_upp` / аналитические) идут через реестр;
+  неизвестный ключ не приводит к `KeyError`
+- `handler.py` — один `_process_one(file_path, collect_failures=...)` вместо
+  двух почти одинаковых методов. Три словаря заменены `ProcessingResult`
+  (`files`, `checks`, `failures`, `processed_count`, `clear()`)
+- `excel_io.py` — `sanitize_sheet_name` убирает `[]:*?/\`, пустые имена
+  заменяются на `Лист`, длина режется до 31 символа
+- `config.py` — путь: `FLATREGISTER_CONFIG_PATH` → папка `.exe` (если
+  writable) → `%APPDATA%\FlatRegister1C\config.json`; в dev — корень проекта.
+  Битый JSON или кодировка сохраняются в `config.json.bak-*`, в лог пишется
+  предупреждение, настройки сбрасываются на `DEFAULT_CONFIG`
+- UI (`ui/app.py`, `ui/screens.py`) и `tools/regress.py` переведены на реестр
+  и `FileHandler.result`; `text.REQUIREMENTS` удалён
+- тесты: `isolated_config` теперь задаёт путь через env, добавлены проверки
+  реестра, бэкапа конфига, стабильности «остальных» колонок и санитизации
+  имени листа; xfail на порядок колонок снят
+
+**Проверка**
+
+| Проверка | Результат |
+|---|---|
+| `uv run ruff check .` | 0 замечаний |
+| `uv run pytest` | 111 passed |
+| GAZ: 112 файлов, `--assert-no-regression` | регрессий **0** |
+| МЭЗ: 66 файлов, `--assert-no-regression` | регрессий **0** |
+| `tools/smoke_errors.py`, `tools/smoke_ui.py` | OK |
+
+**Критерий готовности**
+
+Baseline не изменился. Новый регистр добавляется одной записью в
+`REGISTER_SPEC`; текст требований можно задать там же строкой, не трогая UI,
+фабрику и `DESIRED_ORDER`.
 
 ### S7 — УПП / не-УПП (2026-10-19)
 

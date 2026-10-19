@@ -14,7 +14,8 @@ from textual.reactive import reactive
 from textual.widgets import Button, Footer, Header, Markdown, Select
 
 from flatregister.logging_setup import setup_logging
-from text import REQUIREMENTS, START_WINDOW
+from flatregister.registry import REGISTER_SPEC, select_options
+from text import START_WINDOW
 from ui.screens import ContactsScreen, RegisterScreen, SettingsScreen
 
 # Журнал настраивается один раз при импорте, до создания приложения: иначе
@@ -66,14 +67,7 @@ class FlatRegister1CApp(App):
         yield Horizontal(
             Center(
                 Select(
-                    (
-                        ("1. Отчет по проводкам", 'posting'),
-                        ("2. Карточка счета", 'card'),
-                        ("3. Анализ счета", 'analisys'),
-                        ("4. Обороты счета", 'turnover'),
-                        ("5. ОСВ счета", 'accountosv'),
-                        ("6. ОСВ общая", 'generalosv')
-                    ),
+                    select_options(),
                     prompt='выбрать регистр',
                 ),
                 id='left_select'
@@ -112,7 +106,11 @@ class FlatRegister1CApp(App):
             select = self.query_one(Select)
             if select.value is not Select.BLANK:
                 self.register = select.value
-                self.register_requirements = REQUIREMENTS.get(select.value, "Не выбран регистр для обработки!")
+                entry = REGISTER_SPEC.get(select.value)
+                self.register_requirements = (
+                    entry.requirements if entry is not None
+                    else "Не выбран регистр для обработки!"
+                )
                 self.contact_visibility = 0
                 self.push_screen(RegisterScreen())
                 

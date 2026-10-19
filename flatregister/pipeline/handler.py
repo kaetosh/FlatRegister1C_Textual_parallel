@@ -1,14 +1,16 @@
 """Оркестратор обработки: одиночный файл, папка, последовательно и параллельно.
 
 Разделение ``file_handler.py`` — Сессия S5 плана рефакторинга (см. Tasks.md).
-Поведение не менялось.
+В S8 одиночный и пакетный режимы идут через один и тот же ``_process_one``,
+а результаты складываются в :class:`ProcessingResult`, а не в три словаря.
 """
 import concurrent.futures
 import contextlib
 import os
 import tempfile
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Literal, Tuple
+from typing import Dict, List, Optional, Tuple, Type
 
 import pandas as pd
 
@@ -20,7 +22,7 @@ from flatregister.errors import (
     OutputError,
     describe_exception,
 )
-from flatregister.excel_io import open_file, write_df_in_chunks
+from flatregister.excel_io import open_file, sanitize_sheet_name, write_df_in_chunks
 from flatregister.logging_setup import get_logger, log_failure
 from flatregister.pipeline.factory import ExcelValidator, FileProcessorFactory
 from flatregister.pipeline.parallel import _process_file_parallel
@@ -28,6 +30,30 @@ from flatregister.pipeline.result_collector import ResultCollector
 from flatregister.registers.base import FileProcessor
 
 _log = get_logger("pipeline")
+
+
+@dataclass
+class ProcessingResult:
+    """Всё, что обработка отдаёт наружу: кадры, проверки и отказы.
+
+    Раньше это были три независимых словаря (``storage_processed_registers``,
+    ``check``, ``not_correct_files``), которые очищались вручную и могли
+    разъехаться: файл попадал в один, но не в другой.
+    """
+
+    register_type: Optional[str] = None
+    files: Dict[str, pd.DataFrame] = field(default_factory=dict)
+    checks: Dict[str, pd.DataFrame] = field(default_factory=dict)
+    failures: Dict[str, FileFailure] = field(default_factory=dict)
+
+    @property
+    def processed_count(self) -> int:
+        return len(self.files)
+
+    def clear(self) -> None:
+        self.files.clear()
+        self.checks.clear()
+        self.failures.clear()
 
 
 class FileHandler:
@@ -41,11 +67,7 @@ class FileHandler:
         self.parallel = parallel
         self.validator = ExcelValidator()
         self.processor_factory = FileProcessorFactory()
-
-        self.not_correct_files: Dict[str, FileFailure] = {}  # имя файла: причина отказа
-        self.storage_processed_registers = {}
-        self.check = {}
-        self.type_register = None
+        self.result = ProcessingResult()
 
     def _record_failure(self, file_name: str, failure: FileFailure) -> None:
         """Единственное место, где отказ файла попадает в отчёт и в журнал.
@@ -54,29 +76,42 @@ class FileHandler:
         ``except`` в трёх методах, из-за чего один и тот же файл мог попасть
         в список с текстом ``str(e)``, а в журнал — не попасть вовсе.
         """
-        self.not_correct_files[file_name] = failure
+        self.result.failures[file_name] = failure
         log_failure(failure, logger=_log)
 
-    def _process_file_and_record(self, file_path: Path) -> tuple:
-        """Обработать один файл, при отказе записать его в отчёт.
+    def _process_one(
+        self,
+        file_path: Path,
+        *,
+        collect_failures: bool,
+    ) -> Tuple[Optional[Type[FileProcessor]], Optional[pd.DataFrame], Optional[pd.DataFrame]]:
+        """Обработать файл и записать отказ в журнал.
 
-        Возвращает ``(processor_class, result, check)``. Отказ **не**
-        пробрасывается: в пакетном режиме один плохой файл не должен
-        останавливать папку.
+        Это единственный путь обработки одного файла. Разница между одиночным
+        и пакетным режимом — только в том, глотать ли отказ: в пакете один
+        плохой файл не должен останавливать папку, а в одиночном режиме ошибка
+        идёт пользователю.
         """
         try:
-            processor = self.processor_factory.get_processor(file_path, self.type_register)
+            if not self.validator.is_valid_excel(file_path):
+                raise NotSpreadsheetError(
+                    NotSpreadsheetError.default_user_message,
+                    hint="Укажите файл .xlsx — выгрузку регистра из 1С.",
+                )
+            processor = self.processor_factory.get_processor(file_path, self.result.register_type)
             result, check = processor.process_file(file_path)
             return processor.__class__, result, check
         except Exception as error:
-            self._record_failure(file_path.name, describe_exception(error, file_name=file_path.name))
-            return None, None, None
+            self._record_failure(
+                file_path.name,
+                describe_exception(error, file_name=file_path.name),
+            )
+            if collect_failures:
+                return None, None, None
+            raise
 
-    def handle_input(self, input_path: Path,
-                    type_register: Literal['posting', 'card', 'analisys', 'turnover',
-                                          'accountosv', 'generalosv'],
-                    progress_callback) -> None:
-        self.type_register = type_register
+    def handle_input(self, input_path: Path, type_register: str, progress_callback) -> None:
+        self.result.register_type = type_register
         if input_path.is_file():
             self._process_single_file(input_path)
         elif input_path.is_dir():
@@ -85,39 +120,24 @@ class FileHandler:
     def _process_single_file(self, file_path: Path) -> None:
         """Обработать одиночный файл.
 
-        В отличие от пакетного режима отказ здесь пробрасывается наверх: файла
-        всего один, показать ошибку нужно непосредственно пользователю, а не
-        прятать её в отчёте.
+        Отказ пробрасывается наверх: файла всего один, показать ошибку нужно
+        непосредственно пользователю, а не прятать её в отчёте.
         """
-        if not self.validator.is_valid_excel(file_path):
-            failure = FileFailure(
-                file_name=file_path.name,
-                user_message=NotSpreadsheetError.default_user_message,
-                hint="Укажите файл .xlsx — выгрузку регистра из 1С.",
-            )
-            self._record_failure(file_path.name, failure)
-            raise NotSpreadsheetError(failure.user_message, hint=failure.hint)
+        _processor_class, result, check = self._process_one(file_path, collect_failures=False)
+        self.result.files[file_path.name] = result
+        self.result.checks[file_path.name] = check
 
-        processor = self.processor_factory.get_processor(file_path, self.type_register)
-        result, check = processor.process_file(file_path)
-        self.storage_processed_registers[file_path.name] = result
-        self.check[file_path.name] = check
-    
-    
-    
     def _process_directory(self, dir_path: Path, progress_callback) -> None:
         excel_files = self._get_excel_files(dir_path)
-        result_collector = ResultCollector()
-        result_collector.type_register = self.type_register
+        result_collector = ResultCollector(self.result.register_type)
 
         # Проверка условия параллельной обработки
-        if self.parallel and self.type_register != 'turnover':
+        if self.parallel and self.result.register_type != 'turnover':
             self._process_directory_parallel(dir_path, progress_callback, result_collector)
         else:
-            # Существующая последовательная обработка (с изменениями)
             total_files = len(excel_files)
             for i, file_path in enumerate(excel_files):
-                processor_class, result, check = self._process_file_and_record(file_path)
+                processor_class, result, check = self._process_one(file_path, collect_failures=True)
                 if processor_class is not None:
                     result_collector.add_result(processor_class, result, check)
                 progress_callback(
@@ -137,7 +157,7 @@ class FileHandler:
 
         with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
             future_to_file = {
-                executor.submit(_process_file_parallel, file_path, self.type_register): file_path
+                executor.submit(_process_file_parallel, file_path, self.result.register_type): file_path
                 for file_path in excel_files
             }
 
@@ -165,21 +185,6 @@ class FileHandler:
 
         progress_callback(0, 0, stage_description='Сохраняем и открываем итоговый файл')
         self._save_combined_results(result_collector)
-    
-    def _process_single_file_consistently(self, file_path: Path, type_register: str) -> Tuple[FileProcessor, pd.DataFrame, pd.DataFrame]:
-        """Обработать файл последовательно (переименовано для совместимости)
-
-        Оставлен для внешних вызовов. Внутри пайплайна обработка папки идёт
-        через :meth:`_process_file_and_record`, которая к тому же пишет отказ
-        в отчёт и в журнал.
-        """
-        if not ExcelValidator.is_valid_excel(file_path):
-            return None, None, None
-
-        processor = FileProcessorFactory.get_processor(file_path, type_register)
-        result, check = processor.process_file(file_path)
-
-        return processor, result, check
 
     @staticmethod
     def _get_excel_files(dir_path: Path) -> List[Path]:
@@ -250,22 +255,22 @@ class FileHandler:
         self._open_file(temp_filename)
 
     def _save_and_open_batch_result(self, progress_callback) -> None:
-        """Сохранить и открыть результаты пакетной обработки"""
-        if not self.storage_processed_registers and not self.check:
+        """Сохранить и открыть результаты обработки одиночных файлов"""
+        if not self.result.files and not self.result.checks:
             return
 
         progress_callback(stage_description='Сохраняем и открываем итоговый файл')
 
         def write_sheets(writer) -> None:
             # Основные данные
-            for sheet_name, df in self.storage_processed_registers.items():
-                safe_name = sheet_name[:31]
+            for sheet_name, df in self.result.files.items():
+                safe_name = sanitize_sheet_name(sheet_name)
                 df = df.map(lambda x: x.rstrip() if isinstance(x, str) else x)
                 df.to_excel(writer, sheet_name=safe_name, index=False)
 
             # Данные проверки
-            for sheet_name, df in self.check.items():
-                safe_name = f"Проверка_{sheet_name}"[:31]
+            for sheet_name, df in self.result.checks.items():
+                safe_name = sanitize_sheet_name(f"Проверка_{sheet_name}")
                 if not df.empty:
                     df.to_excel(writer, sheet_name=safe_name, index=False)
 

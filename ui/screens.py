@@ -231,16 +231,14 @@ class RegisterScreen(Screen):
                                       register,
                                       progress_callback=progress_screen.update_progress)  # Передаем callback
 
-            if file_handler.storage_processed_registers:
-                file_handler._save_and_open_batch_result(progress_callback=progress_screen.update_progress) # Передаем callback
+            if file_handler.result.files:
+                file_handler._save_and_open_batch_result(progress_callback=progress_screen.update_progress)  # Передаем callback
 
             # Снимаем отчёты и чистим хранилище до возврата в UI-поток: иначе
             # фоновый поток продолжал бы держать в памяти все кадры.
-            failures = dict(file_handler.not_correct_files)
-            processed_count = len(file_handler.storage_processed_registers)
-            file_handler.not_correct_files.clear()
-            file_handler.storage_processed_registers.clear()
-            file_handler.check.clear()
+            failures = dict(file_handler.result.failures)
+            processed_count = file_handler.result.processed_count
+            file_handler.result.clear()
 
             # Возвращаемся в основной поток
             self.app.call_from_thread(self.on_success, failures, processed_count)
