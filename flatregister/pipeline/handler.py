@@ -45,15 +45,13 @@ class ProcessingResult:
     files: Dict[str, pd.DataFrame] = field(default_factory=dict)
     checks: Dict[str, pd.DataFrame] = field(default_factory=dict)
     failures: Dict[str, FileFailure] = field(default_factory=dict)
-
-    @property
-    def processed_count(self) -> int:
-        return len(self.files)
+    processed_count: int = 0
 
     def clear(self) -> None:
         self.files.clear()
         self.checks.clear()
         self.failures.clear()
+        self.processed_count = 0
 
 
 class FileHandler:
@@ -100,6 +98,7 @@ class FileHandler:
                 )
             processor = self.processor_factory.get_processor(file_path, self.result.register_type)
             result, check = processor.process_file(file_path)
+            self.result.processed_count += 1
             return processor.__class__, result, check
         except Exception as error:
             self._record_failure(
@@ -169,6 +168,7 @@ class FileHandler:
                         self._record_failure(file_name, failure)
                     else:
                         result_collector.add_result(processor_class, result, check)
+                        self.result.processed_count += 1
                 except Exception as error:
                     # Сюда попадает только падение самого ProcessPoolExecutor
                     # (процесс убит, нет свободной памяти) — не отказ файла.

@@ -44,7 +44,7 @@
 * Воркер `_process_file_parallel` (`flatregister/pipeline/parallel.py:12-36`) **обязан быть top-level** (picklable) и **возвращать кортеж**, а не бросать: `(file_name, processor_class, result, check, failure)`. Ошибка едет обратно `FileFailure`. Журналирования внутри воркеров нет намеренно (несколько процессов мешали бы ротации одного файла) — трейсбек пишет родитель в `_record_failure`.
 
 ## Сборка результата
-`ProcessingResult` (`handler.py:36-56`) — единый контейнер: `files`, `checks`, `failures`, `register_type`; `processed_count` и `clear()`. Заменил три параллельных словаря (`not_correct_files`, `storage_processed_registers`, `check`).
+`ProcessingResult` (`handler.py:36-56`) — единый контейнер: `files`, `checks`, `failures`, `register_type`; `processed_count` и `clear()`. Заменил три параллельных словаря (`not_correct_files`, `storage_processed_registers`, `check`). `processed_count` — число **успешно обработанных файлов** (растёт и в папочном режиме, где `files` пуст), а не `len(files)`.
 
 `ResultCollector` (`flatregister/pipeline/result_collector.py:22`):
 * регистр передаётся в **конструктор** (`ResultCollector(register_type)`, `handler.py:132`), а не ставится атрибутом вручную;

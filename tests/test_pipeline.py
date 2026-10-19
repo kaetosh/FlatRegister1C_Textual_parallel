@@ -132,6 +132,7 @@ def test_папка_из_двух_файлов_склеивается(out_dir, c
     handler.handle_input(out_dir, "accountosv", _progress)
 
     assert not handler.result.failures, handler.result.failures
+    assert handler.result.processed_count == 2
     frame, check = _frames(captured, "accountosv")
     assert not frame.empty
     assert set(frame["Исх.файл"]) == {"ООО Ромашка.xlsx", "ООО Вектор.xlsx"}
@@ -149,6 +150,7 @@ def test_плохой_файл_не_останавливает_папку(out_di
     handler.handle_input(out_dir, "accountosv", _progress)
 
     assert set(handler.result.failures) == {"мусор.xlsx"}
+    assert handler.result.processed_count == 1
     frame, _ = _frames(captured, "accountosv")
     assert set(frame["Исх.файл"]) == {"хороший.xlsx"}
 
@@ -243,10 +245,13 @@ def test_последовательный_и_параллельный_режим
         handler = FileHandler(parallel=parallel)
         handler.handle_input(out_dir, "accountosv", _progress)
         assert not handler.result.failures, handler.result.failures
-        return box["results"]
+        return box["results"], handler.result.processed_count
 
-    sequential = run(parallel=False)
-    parallel = run(parallel=True)
+    sequential, sequential_count = run(parallel=False)
+    parallel, parallel_count = run(parallel=True)
+
+    assert sequential_count == 3
+    assert parallel_count == 3
 
     for key in sequential:
         left, _ = sequential[key]
@@ -284,6 +289,7 @@ def test_одиночный_файл_кладётся_в_результат(out_
 
     assert not handler.result.failures
     assert set(handler.result.files) == {"Карточка.xlsx"}
+    assert handler.result.processed_count == 1
 
 
 def test_отказ_в_одиночном_режиме_пробрасывается(out_dir):
