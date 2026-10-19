@@ -238,6 +238,10 @@ def test_последовательный_и_параллельный_режим
         right, _ = parallel[key]
         if left.empty and right.empty:
             continue
+        # Порядок файлов в параллельном режиме задаёт as_completed, а не glob,
+        # поэтому сравниваем содержимое, а не последовательность строк.
+        left = left.sort_values(by="Исх.файл", kind="stable").reset_index(drop=True)
+        right = right.sort_values(by="Исх.файл", kind="stable").reset_index(drop=True)
         pd.testing.assert_frame_equal(left.sort_index(axis=1),
                                       right.sort_index(axis=1), check_like=True)
 
