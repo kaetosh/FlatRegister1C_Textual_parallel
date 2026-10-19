@@ -5,14 +5,18 @@ Created on Mon Aug 25 11:23:20 2025
 @author: a.karabedyan
 """
 
+from abc import ABC, abstractmethod
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
-from abc import ABC, abstractmethod
 
-from register_processors.class_processor import FileProcessor
-from custom_errors import RegisterProcessingError
-from support_functions import fix_1c_excel_case, get_keep_subaccounts
+from flatregister.config import get_keep_subaccounts
+from flatregister.dtypes import ensure_column_types, to_numeric
+from flatregister.errors import RegisterEmptyError, RegisterNotRecognizedError, RegisterStructureError
+from flatregister.excel_io import fix_1c_excel_case
+from flatregister.hierarchy import find_word_column, spread_levels
+from flatregister.registers.base import FileProcessor
 
 
 def pivot_hierarchy_to_columns(df, separator='_'):
@@ -31,21 +35,15 @@ def pivot_hierarchy_to_columns(df, separator='_'):
     pandas.DataFrame
         DataFrame с добавленными колонками Level_0, Level_1, ...
     """
-    max_level = df['Уровень'].max()
-    for level in range(max_level + 1):
-        level_mask = df['Уровень'] == level
-        combined = df['Счет'].astype(str) + separator + df['Наименование'].astype(str)
-        df[f'Level_{level}'] = combined.where(level_mask)
-        df[f'Level_{level}'] = df[f'Level_{level}'].ffill()
-        higher_level_mask = df['Уровень'] < level
-        df.loc[higher_level_mask, f'Level_{level}'] = None
+    combined = df['Счет'].astype(str) + separator + df['Наименование'].astype(str)
+    spread_levels(df, combined)
     return df
 
 
 def get_col_sum_or_zero(df, col):
     """Возвращает сумму столбца или 0, если столбца нет"""
     if col in df.columns:
-        numeric_series = pd.to_numeric(df[col], errors='coerce').fillna(0)
+        numeric_series = to_numeric(df[col], fill_zero=True)
         return numeric_series.sum().round()
     return 0
 
@@ -139,6 +137,7 @@ class BaseOSVFileProcessor(FileProcessor, ABC):
             })
         
         df.drop(columns=['Уровень'], errors='ignore', inplace=True)
+        df = ensure_column_types(df)
         return df, self.table_for_check
 
 
@@ -146,28 +145,24 @@ class GeneralOSV_UPPFileProcessor(BaseOSVFileProcessor):
     """Обработчик для ОСВ из 1С УПП (старый формат)."""
 
     def _process_dataframe_optimized(self, df: pd.DataFrame) -> pd.DataFrame:
-        MAX_HEADER_ROWS = 30
-
         df = df.replace('', np.nan)
         df.dropna(axis=1, how='all', inplace=True)
         df.dropna(axis=0, how='all', inplace=True)
 
-        max_rows_to_check = min(MAX_HEADER_ROWS, len(df))
-
         # Поиск столбца со словом "счет"
-        account_col_idx = None
-        for col_idx in range(df.shape[1]):
-            col_values = df.iloc[:max_rows_to_check, col_idx].astype(str).str.strip().str.lower()
-            if 'счет' in col_values.values:
-                account_col_idx = col_idx
-                break
+        account_col_idx = find_word_column(df, 'счет')
         if account_col_idx is None:
-            raise RegisterProcessingError('Не найден столбец с "Счет" в первых 30 строках.')
+            raise RegisterStructureError(
+                'Не найден столбец с "Счет" в первых 30 строках.',
+                hint='Похоже, это не ОСВ. Проверьте, что выбран тот тип регистра, '
+                     'который соответствует выгрузке.')
 
         first_col = df.iloc[:, account_col_idx].astype(str)
         mask = first_col == 'Счет'
         if not mask.any():
-            raise RegisterProcessingError('Файл не является ОСВ 1с.')
+            raise RegisterNotRecognizedError(
+                'Файл не является ОСВ 1с.',
+                hint='В выгрузке нет строки заголовков со словом «Счет».')
 
         date_row_idx = mask.idxmax()
         df.columns = df.iloc[date_row_idx]
@@ -180,7 +175,10 @@ class GeneralOSV_UPPFileProcessor(BaseOSVFileProcessor):
         mask_name = first_row == 'Наименование'
         cols_name_acc = np.where(mask_name)[0]
         if cols_name_acc.size == 0:
-            raise RegisterProcessingError('ОСВ выгружена без наименований счета')
+            raise RegisterStructureError(
+                'ОСВ выгружена без наименований счёта.',
+                hint='В выгрузке нет столбца «Наименование». Выгрузите ОСВ заново '
+                     'через меню «Сохранить как» в 1С.')
         col_index_name_acc = cols_name_acc[0]
 
         required_cols = [
@@ -190,20 +188,18 @@ class GeneralOSV_UPPFileProcessor(BaseOSVFileProcessor):
         ]
         for col in required_cols:
             if col not in df.columns:
-                raise RegisterProcessingError(f'Отсутствует обязательный столбец: {col}')
+                raise RegisterStructureError(
+                    f'Отсутствует обязательный столбец: {col}',
+                    hint='Столбец нужен для разноса оборотов по дебету и кредиту. '
+                         'Проверьте, что в 1С выгружена ОСВ с оборотом за период.')
 
-        cols = df.columns.tolist()
         target_idx_a = df.columns.get_loc('Сальдо на начало периода')
         target_idx_b = df.columns.get_loc('Оборот за период')
         target_idx_c = df.columns.get_loc('Сальдо на конец периода')
 
         new_cols = list(df.columns)
         new_cols[col_index_name_acc] = 'Наименование'
-        # def find_column_index(cols, df, start_idx, word):
-        #     for idx in range(start_idx + 1, len(cols)):
-        #         if df.iloc[0, idx] == word:
-        #             return idx
-        #     return None
+
         def find_column_index(df, start_idx, word):
             # 1. Берем срез первой строки от нужной позиции
             row_slice = df.iloc[0, start_idx + 1:]
@@ -251,10 +247,15 @@ class GeneralOSV_UPPFileProcessor(BaseOSVFileProcessor):
         df = df.iloc[1:]  # удаляем строку "Дебет Кредит ..."
 
         if df['Уровень'].max() == 0:
-            raise RegisterProcessingError('ОСВ пустая.')
+            raise RegisterEmptyError(
+                'ОСВ пустая.',
+                hint='В выгрузке нет ни одной строки с данными.')
 
         if df['Уровень'].isnull().any() or df['Курсив'].isnull().any():
-            raise RegisterProcessingError('Найдены пустые значения в столбцах Уровень или Курсив.')
+            raise RegisterStructureError(
+                'Найдены пустые значения в столбцах Уровень или Курсив.',
+                hint='В Excel не выставлены уровни группировки (знаки «+» и «−» слева). '
+                     'Выгрузите регистр заново через меню «Сохранить как» в 1С.')
 
         df.drop(columns=['Курсив'], errors='ignore', inplace=True)
         return df
@@ -269,20 +270,19 @@ class GeneralOSV_NonUPPFileProcessor(BaseOSVFileProcessor):
         df.dropna(axis=0, how='all', inplace=True)
 
         # Поиск столбца "Счет"
-        account_col_idx = None
-        max_rows_to_check = min(30, df.shape[0])
-        for col_idx in range(df.shape[1]):
-            col_values = df.iloc[:max_rows_to_check, col_idx].astype(str).str.strip().str.lower()
-            if 'счет' in col_values.values:
-                account_col_idx = col_idx
-                break
+        account_col_idx = find_word_column(df, 'счет')
         if account_col_idx is None:
-            raise RegisterProcessingError('Не найден столбец с "Счет" в первых 30 строках.')
+            raise RegisterStructureError(
+                'Не найден столбец с "Счет" в первых 30 строках.',
+                hint='Похоже, это не ОСВ. Проверьте, что выбран тот тип регистра, '
+                     'который соответствует выгрузке.')
 
         first_col = df.iloc[:, account_col_idx].astype(str)
         mask = first_col == 'Счет'
         if not mask.any():
-            raise RegisterProcessingError('Файл не является ОСВ 1с.')
+            raise RegisterNotRecognizedError(
+                'Файл не является ОСВ 1с.',
+                hint='В выгрузке нет строки заголовков со словом «Счет».')
 
         date_row_idx = mask.idxmax()
         df.columns = df.iloc[date_row_idx]
@@ -311,10 +311,15 @@ class GeneralOSV_NonUPPFileProcessor(BaseOSVFileProcessor):
         df = df.iloc[1:]  # удаляем строку с "Дебет Кредит ..."
 
         if df['Уровень'].max() == 0:
-            raise RegisterProcessingError('ОСВ пустая.')
+            raise RegisterEmptyError(
+                'ОСВ пустая.',
+                hint='В выгрузке нет ни одной строки с данными.')
 
         if df['Уровень'].isnull().any() or df['Курсив'].isnull().any():
-            raise RegisterProcessingError('Найдены пустые значения в столбцах Уровень или Курсив.')
+            raise RegisterStructureError(
+                'Найдены пустые значения в столбцах Уровень или Курсив.',
+                hint='В Excel не выставлены уровни группировки (знаки «+» и «−» слева). '
+                     'Выгрузите регистр заново через меню «Сохранить как» в 1С.')
 
         df.drop(columns=['Курсив'], errors='ignore', inplace=True)
         return df

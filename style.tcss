@@ -59,6 +59,13 @@ Select {
     overflow-y: auto;  /* Включаем вертикальную прокрутку */
 }
 
+#failed_files_log_hint {
+    height: auto;
+    padding: 1 2;
+    color: $text-muted;
+    border-top: solid $panel;
+}
+
 #screen_loader_indicator {
     align: center middle;
     height: 25%;

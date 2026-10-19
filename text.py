@@ -193,12 +193,3 @@ TEXT_TOTAL_TURNOVER_BALANCE_SHEET = """\
 
 3) Прочие версии с заголовками из пунктов выше.
 """
-
-REQUIREMENTS = {
-    'posting': TEXT_REQUIREMENT_TRANSACTION_REPORT,
-    'card': TEXT_ACCOUNT_CARD,
-    'analisys': TEXT_ACCOUNT_ANALYSIS,
-    'turnover': TEXT_ACCOUNT_TURNOVER,
-    'accountosv': TEXT_BALANCE_SHEET_ACCOUNT,
-    'generalosv': TEXT_TOTAL_TURNOVER_BALANCE_SHEET
-}

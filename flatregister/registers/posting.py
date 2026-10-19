@@ -5,15 +5,16 @@ Created on Mon Aug 25 12:20:46 2025
 @author: a.karabedyan
 """
 
-import numpy as np
-import pandas as pd
 from pathlib import Path
 
-from register_processors.class_processor import FileProcessor
-from custom_errors import RegisterProcessingError
-from support_functions import fix_1c_excel_case
+import numpy as np
+import pandas as pd
 
-pd.set_option('future.no_silent_downcasting', True)
+from flatregister.dtypes import ensure_column_types, to_numeric
+from flatregister.errors import RegisterEmptyError, RegisterStructureError
+from flatregister.excel_io import fix_1c_excel_case
+from flatregister.hierarchy import keep_first_unique_per_row, split_and_expand
+from flatregister.registers.base import FileProcessor
 
 
 class Posting_UPPFileProcessor(FileProcessor):
@@ -26,17 +27,7 @@ class Posting_UPPFileProcessor(FileProcessor):
         Оставляет только первое вхождение значения в строке, остальные заменяет на NaN.
         Работает во всех версиях Pandas.
         """
-        result = df.copy()
-        
-        # Применяем к каждой строке
-        for idx in df.index:
-            row = df.loc[idx]
-            # Находим дубликаты в строке
-            duplicates = row.duplicated()
-            # Заменяем дубликаты на NaN
-            result.loc[idx, duplicates] = np.nan
-        
-        return result
+        return keep_first_unique_per_row(df)
 
     @staticmethod
     def _process_quantity_section(df: pd.DataFrame) -> pd.DataFrame:
@@ -45,7 +36,10 @@ class Posting_UPPFileProcessor(FileProcessor):
             if not (df['Содержание'] == 'Количество').any():
                 return pd.DataFrame()
         except KeyError:
-            raise RegisterProcessingError('Не найден или пустой столбец Содержание.')
+            raise RegisterStructureError(
+                'Не найден или пустой столбец «Содержание».',
+                hint='Похоже, это не отчёт по проводкам из 1С УПП. Проверьте, что '
+                     'выбран тот тип регистра, который соответствует выгрузке.')
             
         df_with_count = df[df['Содержание'] == 'Количество'].copy()
         
@@ -54,11 +48,11 @@ class Posting_UPPFileProcessor(FileProcessor):
         kt_idx = df_with_count.columns.get_loc('Кт')
         
         # Преобразование в числовые типы
-        dt_col = pd.to_numeric(df_with_count.iloc[:, dt_idx], errors='coerce').fillna(0)
-        dt_next_col = pd.to_numeric(df_with_count.iloc[:, dt_idx + 1], errors='coerce').fillna(0)
+        dt_col = to_numeric(df_with_count.iloc[:, dt_idx], fill_zero=True)
+        dt_next_col = to_numeric(df_with_count.iloc[:, dt_idx + 1], fill_zero=True)
         
-        kt_col = pd.to_numeric(df_with_count.iloc[:, kt_idx], errors='coerce').fillna(0)
-        kt_next_col = pd.to_numeric(df_with_count.iloc[:, kt_idx + 1], errors='coerce').fillna(0)
+        kt_col = to_numeric(df_with_count.iloc[:, kt_idx], fill_zero=True)
+        kt_next_col = to_numeric(df_with_count.iloc[:, kt_idx + 1], fill_zero=True)
         
         # Суммирование
         df_with_count.loc[:, 'Дт_количество'] = dt_col + dt_next_col
@@ -73,7 +67,10 @@ class Posting_UPPFileProcessor(FileProcessor):
             if not (df['Содержание'] == 'Валюта').any():
                 return pd.DataFrame()
         except KeyError:
-            raise RegisterProcessingError('Не найден или пустой столбец Содержание.')
+            raise RegisterStructureError(
+                'Не найден или пустой столбец «Содержание».',
+                hint='Похоже, это не отчёт по проводкам из 1С УПП. Проверьте, что '
+                     'выбран тот тип регистра, который соответствует выгрузке.')
             
         df_with_currency = df[df['Содержание'] == 'Валюта'].copy()
         
@@ -113,7 +110,9 @@ class Posting_UPPFileProcessor(FileProcessor):
         # df = df[~df['Содержание'].isin(['Количество', 'Валюта'])]
         
         if df.empty:
-            raise RegisterProcessingError("Отчет по проводкам 1с пустой в файле, обработка невозможна.")
+            raise RegisterEmptyError(
+                'Отчёт по проводкам в файле пустой.',
+                hint='В выгрузке нет ни одной строки с данными.')
 
         # Подготовка к pivot
         df = df.fillna({'Содержание': '', 'Субконто Дт': '', 'Субконто Кт': ''})
@@ -214,7 +213,8 @@ class Posting_UPPFileProcessor(FileProcessor):
         # Удаление пустых строк и столбцов
         result.dropna(how='all', inplace=True)
         result.dropna(how='all', axis=1, inplace=True)
-        
+
+        result = ensure_column_types(result)
         return result, self.table_for_check
     
 
@@ -230,18 +230,7 @@ class Posting_NonUPPFileProcessor(FileProcessor):
     @staticmethod
     def _split_and_expand(df: pd.DataFrame, col_name: str, prefix: str) -> None:
         """Оптимизированное разбиение столбца с разделителем \n"""
-        if col_name not in df.columns:
-            return
-            
-        new_cols = df[col_name].str.split('\n', expand=True)
-        if new_cols.empty:
-            df.drop(columns=[col_name], inplace=True)
-            return
-            
-        n_cols = new_cols.shape[1]
-        new_cols.columns = [f'{prefix}_{i+1}' for i in range(n_cols)]
-        df[new_cols.columns] = new_cols
-        df.drop(columns=[col_name], inplace=True)
+        split_and_expand(df, col_name, prefix)
     
     @staticmethod    
     def _rename_columns_after_pokaz(df: pd.DataFrame) -> pd.DataFrame:
@@ -279,7 +268,10 @@ class Posting_NonUPPFileProcessor(FileProcessor):
         # Поиск строки с заголовками
         period_rows = df.index[df.iloc[:, 0] == 'Период'].tolist()
         if not period_rows:
-            raise RegisterProcessingError('Не найден заголовок Период в шапке таблицы')
+            raise RegisterStructureError(
+                'Не найден заголовок «Период» в шапке таблицы.',
+                hint='В выгрузке нет строки с заголовком «Период» — по ней определяется '
+                     'шапка таблицы. Похоже, это не отчёт по проводкам.')
             
         header_row = period_rows[0]
         df.columns = df.iloc[header_row]
@@ -299,15 +291,15 @@ class Posting_NonUPPFileProcessor(FileProcessor):
                 if not df_with_col.empty:
                     try:
                         dt_idx = df_with_col.columns.get_loc('Дебет')
-                        df_with_col['Дебет_количество'] = pd.to_numeric(
-                            df_with_col.iloc[:, dt_idx + 1], errors='coerce').fillna(0)
+                        df_with_col['Дебет_количество'] = to_numeric(
+                            df_with_col.iloc[:, dt_idx + 1], fill_zero=True)
                     except (KeyError, IndexError):
                         pass
                         
                     try:
                         kt_idx = df_with_col.columns.get_loc('Кредит')
-                        df_with_col['Кредит_количество'] = pd.to_numeric(
-                            df_with_col.iloc[:, kt_idx + 1], errors='coerce').fillna(0)
+                        df_with_col['Кредит_количество'] = to_numeric(
+                            df_with_col.iloc[:, kt_idx + 1], fill_zero=True)
                     except (KeyError, IndexError):
                         pass
                     
@@ -323,16 +315,16 @@ class Posting_NonUPPFileProcessor(FileProcessor):
                     try:
                         dt_idx = df_with_currency.columns.get_loc('Дебет')
                         df_with_currency['Дебет_валюта'] = df_with_currency.iloc[:, dt_idx + 1]
-                        df_with_currency['Дебет_валютное_количество'] = pd.to_numeric(
-                            df_with_currency.iloc[:, dt_idx + 2], errors='coerce').fillna(0)
+                        df_with_currency['Дебет_валютное_количество'] = to_numeric(
+                            df_with_currency.iloc[:, dt_idx + 2], fill_zero=True)
                     except (KeyError, IndexError):
                         pass
                         
                     try:
                         kt_idx = df_with_currency.columns.get_loc('Кредит')
                         df_with_currency['Кредит_валюта'] = df_with_currency.iloc[:, kt_idx + 1]
-                        df_with_currency['Кредит_валютное_количество'] = pd.to_numeric(
-                            df_with_currency.iloc[:, kt_idx + 2], errors='coerce').fillna(0)
+                        df_with_currency['Кредит_валютное_количество'] = to_numeric(
+                            df_with_currency.iloc[:, kt_idx + 2], fill_zero=True)
                     except (KeyError, IndexError):
                         pass
                     
@@ -382,6 +374,9 @@ class Posting_NonUPPFileProcessor(FileProcessor):
         df.insert(0, 'Имя_файла', file_path.name)
         
         if df.empty:
-            raise RegisterProcessingError("Отчет по проводкам 1с пустой, обработка невозможна.")
-            
+            raise RegisterEmptyError(
+                'Отчёт по проводкам пустой.',
+                hint='В выгрузке нет ни одной строки с данными.')
+
+        df = ensure_column_types(df)
         return df, self.table_for_check

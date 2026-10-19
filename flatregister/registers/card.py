@@ -6,17 +6,17 @@ Created on Mon Aug 25 11:23:20 2025
 """
 
 import os
-import numpy as np
-import pandas as pd
-
 from pathlib import Path
 from typing import List, Tuple
 
-from register_processors.class_processor import FileProcessor
-from custom_errors import RegisterProcessingError
-from support_functions import fix_1c_excel_case
+import numpy as np
+import pandas as pd
 
-
+from flatregister.dtypes import ensure_column_types, to_numeric
+from flatregister.errors import RegisterEmptyError, RegisterNotRecognizedError, RegisterStructureError
+from flatregister.excel_io import fix_1c_excel_case
+from flatregister.hierarchy import keep_first_unique_per_row, split_and_expand
+from flatregister.registers.base import FileProcessor
 
 
 class Card_UPPFileProcessor(FileProcessor):
@@ -24,21 +24,7 @@ class Card_UPPFileProcessor(FileProcessor):
     
     @staticmethod
     def _fast_keep_first_unique_per_row(df: pd.DataFrame) -> pd.DataFrame:
-        arr = df.values
-        mask = np.ones_like(arr, dtype=bool)
-        
-        for i in range(arr.shape[0]):
-            seen = set()
-            for j in range(arr.shape[1]):
-                val = arr[i, j]
-                if pd.isna(val):
-                    continue
-                if val in seen:
-                    mask[i, j] = False
-                else:
-                    seen.add(val)
-        
-        return pd.DataFrame(np.where(mask, arr, np.nan), columns=df.columns)
+        return keep_first_unique_per_row(df)
     
     def _sum_columns_between(self, df: pd.DataFrame, start_col: str, end_col: str) -> pd.Series:
         """Суммирует значения всех столбцов между start_col и end_col"""
@@ -50,7 +36,7 @@ class Card_UPPFileProcessor(FileProcessor):
                 cols_between = df.columns[start_idx + 1 : end_idx]
                 return (
                     df[cols_between]
-                    .apply(lambda x: pd.to_numeric(x, errors='coerce').fillna(0))
+                    .apply(lambda x: to_numeric(x, fill_zero=True))
                     .sum(axis=1)
                 )
             else:
@@ -68,7 +54,10 @@ class Card_UPPFileProcessor(FileProcessor):
         try:
             filtered = df[df['Операция'] == operation_filter].copy()
         except KeyError:
-            raise RegisterProcessingError('Не найден или пустой столбец Операция.')
+            raise RegisterStructureError(
+                'Не найден или пустой столбец «Операция».',
+                hint='Похоже, это не карточка счёта из 1С УПП. Проверьте, что выбран '
+                     'тот тип регистра, который соответствует выгрузке.')
         if filtered.empty:
             return pd.DataFrame(), df
         
@@ -108,7 +97,9 @@ class Card_UPPFileProcessor(FileProcessor):
         df_currency, df = self._extract_special_data(df, 'В валюте :', ['Документ', 'Дт_валюта', 'Дт_валютая_сумма', 'Кт_валюта', 'Кт_валютая_сумма'])
                  
         if df.empty:
-            raise RegisterProcessingError(f"Карточка 1с пустая в файле {file_path.name}, обработка невозможна.")
+            raise RegisterEmptyError(
+                f'Карточка счёта в файле {file_path.name} пустая.',
+                hint='В выгрузке нет ни одной строки с данными.')
         
         # Подготовка данных
         operations_pivot = (
@@ -166,6 +157,7 @@ class Card_UPPFileProcessor(FileProcessor):
         result = result.drop(columns=['Операция'], errors='ignore')
         result.insert(0, 'Имя_файла', os.path.basename(file_path))
 
+        result = ensure_column_types(result)
         return result, self.table_for_check
 
 class Card_NonUPPFileProcessor(FileProcessor):
@@ -174,17 +166,7 @@ class Card_NonUPPFileProcessor(FileProcessor):
     @staticmethod
     def _split_and_expand(df: pd.DataFrame, col_name: str, prefix: str) -> None:
         """Разбивает столбец с разделителем \n"""
-        if col_name not in df.columns:
-            return
-            
-        new_cols = df[col_name].str.split('\n', expand=True)
-        if new_cols is None or new_cols.empty:
-            df.drop(columns=[col_name], inplace=True)
-            return
-            
-        new_cols.columns = [f'{prefix}_{i+1}' for i in range(new_cols.shape[1])]
-        df[new_cols.columns] = new_cols
-        df.drop(columns=[col_name], inplace=True)
+        split_and_expand(df, col_name, prefix)
 
     def _extract_special_data(
         self,
@@ -208,17 +190,17 @@ class Card_NonUPPFileProcessor(FileProcessor):
                 dt_index = filtered.columns.get_loc('Дебет')
                 if value_filter == 'Кол.':
                     # Пробуем первый столбец
-                    debit_qty = pd.to_numeric(filtered.iloc[:, dt_index + 1], errors='coerce').fillna(0)
+                    debit_qty = to_numeric(filtered.iloc[:, dt_index + 1], fill_zero=True)
                     
                     # Проверяем сумму ВСЕГО столбца
                     if debit_qty.sum() == 0:
                         # Если сумма всех значений в столбце равна 0, берем другой столбец
-                        debit_qty = pd.to_numeric(filtered.iloc[:, dt_index + 2], errors='coerce').fillna(0)
+                        debit_qty = to_numeric(filtered.iloc[:, dt_index + 2], fill_zero=True)
                     
                     result['Дебет_количество'] = debit_qty
                 elif value_filter == 'Вал.':
                     result['Дебет_валюта'] = filtered.iloc[:, dt_index + 1]
-                    result['Дебет_валютное_количество'] = pd.to_numeric(filtered.iloc[:, dt_index + 2], errors='coerce').fillna(0)
+                    result['Дебет_валютное_количество'] = to_numeric(filtered.iloc[:, dt_index + 2], fill_zero=True)
         except (KeyError, IndexError):
             pass
             
@@ -229,19 +211,19 @@ class Card_NonUPPFileProcessor(FileProcessor):
                     
                     
                     # Пробуем первый столбец
-                    credit_qty = pd.to_numeric(filtered.iloc[:, kt_index + 1], errors='coerce').fillna(0)
+                    credit_qty = to_numeric(filtered.iloc[:, kt_index + 1], fill_zero=True)
                     
                     # Проверяем сумму ВСЕГО столбца
                     if credit_qty.sum() == 0:
                         # Если сумма всех значений в столбце равна 0, берем другой столбец
-                        credit_qty = pd.to_numeric(filtered.iloc[:, kt_index + 2], errors='coerce').fillna(0)
+                        credit_qty = to_numeric(filtered.iloc[:, kt_index + 2], fill_zero=True)
                     
                     result['Кредит_количество'] = credit_qty
                     
                     
                 elif value_filter == 'Вал.':
                     result['Кредит_валюта'] = filtered.iloc[:, kt_index + 1]
-                    result['Кредит_валютное_количество'] = pd.to_numeric(filtered.iloc[:, kt_index + 2], errors='coerce').fillna(0)
+                    result['Кредит_валютное_количество'] = to_numeric(filtered.iloc[:, kt_index + 2], fill_zero=True)
         except (KeyError, IndexError):
             pass
         result.reset_index(drop=True, inplace=True)
@@ -256,7 +238,10 @@ class Card_NonUPPFileProcessor(FileProcessor):
         # Поиск строки с заголовками
         period_rows = df.index[df.iloc[:, 0] == 'Период'].tolist()
         if not period_rows:
-            raise RegisterProcessingError('Не найден заголовок Период в шапке таблицы')
+            raise RegisterStructureError(
+                'Не найден заголовок «Период» в шапке таблицы.',
+                hint='В выгрузке нет строки с заголовком «Период» — по ней определяется '
+                     'шапка таблицы. Похоже, это не карточка счёта.')
             
         header_row = period_rows[0]
         df.columns = df.iloc[header_row]
@@ -299,6 +284,10 @@ class Card_NonUPPFileProcessor(FileProcessor):
         df.insert(0, 'Имя_файла', os.path.basename(file_path))
         
         if df.empty:
-            raise RegisterProcessingError(f"Карточка 1с пустая в файле {file_path.name}, обработка невозможна. Файл не УПП")
-        
+            raise RegisterNotRecognizedError(
+                f'Файл {file_path.name} не является карточкой счёта 1С.',
+                hint='В выгрузке нет ни строки с заголовком «Период», ни данных. '
+                     'Похоже, это выгрузка из 1С УПП — выберите другую карточку счёта.')
+
+        df = ensure_column_types(df)
         return df, self.table_for_check
