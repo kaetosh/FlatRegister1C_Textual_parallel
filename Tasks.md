@@ -21,7 +21,7 @@ git и `.venv` на диске. Поэтому новая сессия начи�
 cd C:\Users\karab\Yandex.Disk\automation_processing_1C\Projects\FlatRegister1C_Textual_parallel
 git branch --show-current     # ожидается refactor/s0-safety-net
 git status --short            # ожидается пусто
-uv run pytest                 # ожидается 103 passed, 1 xfailed
+uv run pytest                 # ожидается 111 passed
 ```
 
 Если что-то из этого не сходится — **сначала разобраться, потом начинать**.
@@ -67,14 +67,14 @@ uv run pytest                 # ожидается 103 passed, 1 xfailed
 
 ## Статус
 
-- **Текущая сессия:** S7 — закрыта. Следующая: **S8 (Пайплайн и конфиг)**
+- **Текущая сессия:** S9 — закрыта. Все сессии плана закрыты.
 - **Ветка:** `refactor/s0-safety-net`
 - **Baseline: СНЯТ** на 178 реальных выгрузках, два набора:
   - `tools/baseline_gaz.json` — 112 файлов, все шесть регистров, 117 с
   - `tools/baseline_mez.json` — 66 файлов, ОСВ счёта / анализ / общая ОСВ, 73 с
   Имена файлов в них обезличены хешем: названия организаций и номера счетов
   в репозиторий не попадают.
-- **Тесты:** `uv run pytest` → **103 прошли, 1 ожидаемо упал** (xfail), ~8 с
+- **Тесты:** `uv run pytest` → **111 passed**, ~12 с
 - **Окружение:** `.venv` на Python 3.12.0, зависимости из `pyproject.toml`
 - **Линтер:** `uv run ruff check .` — **0 замечаний** (было 2, оба закрыты в S4)
 - **Дымовые проверки:** `tools/smoke_errors.py` и `tools/smoke_ui.py` — зелёные
@@ -82,19 +82,24 @@ uv run pytest                 # ожидается 103 passed, 1 xfailed
 ## Проверка регрессии — перед КАЖДОЙ сессией
 
 ```powershell
-# 1. прогон на реальных выгрузках
-uv run python tools\regress.py --root "<папка>" --out tools\after_gaz.json
+# 1. прогон на реальных выгрузках (корень — как у эталона, см. ниже)
+uv run python tools\regress.py --root "<__ВЫГРУЗКИ_ГАЗ\__ВЫГРУЗКИ>" --out tools\after_gaz.json
 
 # 2. сравнение с эталоном; код возврата 1 = есть регрессия
 uv run python tools\regress.py --assert-no-regression tools\baseline_gaz.json tools\after_gaz.json
 
 # 3. то же для второго набора
-uv run python tools\regress.py --root "<папка МЭЗ>" --out tools\after_mez.json
+uv run python tools\regress.py --root "<Для фикса Обработчиув регистров\МЭЗ>" --out tools\after_mez.json
 uv run python tools\regress.py --assert-no-regression tools\baseline_mez.json tools\after_mez.json
 
 # 4. и обычные тесты
 uv run pytest
 ```
+
+⚠️ **Корень прогона должен совпадать с раскладкой эталона.** GAZ — это
+**вложенная** папка `...\1С\__ВЫГРУЗКИ_ГАЗ\__ВЫГРУЗКИ` (112 файлов), МЭЗ —
+`...\1С\Для фикса Обработчиув регистров\МЭЗ` (66 файлов). Прогон по внешней
+папке даёт «общих файлов: 0» — это **пустое сравнение**, а не «0 регрессий».
 
 ⚠️ **Эталон чувствителен к настройкам.** Он снят с вашим `config.json`
 (`keep_subaccounts: true`, счета 50/51/52/55/57). Если поменяете настройки —
@@ -116,12 +121,11 @@ uv run pytest
 
 ```powershell
 uv run pytest -q                                          # тесты зелёные
-uv run python tools\regress.py --compare tools\baseline.json tools\after.json
-                                                          # РЕГРЕССИИ: 0
+uv run ruff check .                                       # 0 замечаний
+uv run python tools\regress.py --assert-no-regression tools\baseline_gaz.json tools\after_gaz.json
+uv run python tools\regress.py --assert-no-regression tools\baseline_mez.json tools\after_mez.json
+                                                          # ИТОГ: регрессий нет, exit 0
 ```
-
-Для сессий до появления baseline проверка ограничивается первыми двумя пунктами из сессии
-(см. «Критерий готовности» в таблице сессий).
 
 ---
 
@@ -136,8 +140,8 @@ uv run python tools\regress.py --compare tools\baseline.json tools\after.json
 | S5 | Переезд в пакет | **закрыта** |
 | S6 | Общие примитивы | **закрыта** |
 | S7 | УПП / не-УПП | **закрыта** |
-| S8 | Пайплайн и конфиг | не начата |
-| S9 | Документация и финал | не начата |
+| S8 | Пайплайн и конфиг | **закрыта** |
+| S9 | Документация и финал | **закрыта** |
 
 ### S0 — Каркас и журнал
 
@@ -307,12 +311,12 @@ uv run python tools\regress.py --compare tools\baseline.json tools\after.json
 
 ### S9 — Документация и финал
 
-- [ ] переписать `AGENTS.md` под новую структуру
-- [ ] обновить README
-- [ ] финальный прогон regress + pytest + ruff
-- [ ] итоговая запись в этом файле
+- [x] переписать `AGENTS.md` под новую структуру
+- [x] обновить README
+- [x] финальный прогон regress + pytest + ruff
+- [x] итоговая запись в этом файле
 
-**Критерий готовности:** все сессии закрыты, `Tasks.md` отмечен.
+**Критерий готовности:** выполнен — все сессии закрыты, документация отражает S8.
 
 ---
 
@@ -371,6 +375,46 @@ text.py  style.tcss  requirements.txt  # не трогаем
 ## Лог сессий
 
 _(записи добавляются снизу вверх)_
+
+### S9 — Документация и финал (2026-10-19)
+
+**Сделано**
+
+Сессия документации: код не менялся, обе регрессии по реальным выгрузкам
+дают 0 регрессий.
+
+- **`AGENTS.md` переписан** под структуру S8: единый `REGISTER_SPEC`,
+  `ProcessingResult`, один `_process_one`, `sanitize_sheet_name`, новый
+  путь `config.json`, иерархия `FlatRegisterError` / `FileFailure`,
+  тесты и регрессионный стенд. Убраны ссылки на удалённые
+  `REGISTER_PATTERNS` / `DESIRED_ORDER` / `text.REQUIREMENTS` /
+  `support_functions.py` / `file_handler.py`, ложный type hint
+  `handle_input`, мифический дубль `_process_single_file_consistently`
+  и закомментированный legacy `accountosv`. Номера строк и файлов
+  сверены с кодом после S8.
+- **`README.md` дополнен** актуальными разделами: требования и запуск
+  (`uv sync`, `uv run python main.py`, Excel обязателен), структура
+  проекта, команды pytest / ruff / регрессии, сборка Nuitka из группы
+  `build`. Устаревшее «конвертируется текущим Excel» заменено на то, что
+  делает код: перепаковка `SharedStrings.xml` и перечитывание шапки через
+  xlwings.
+- **`Tasks.md`**: статус, таблица сессий, чек-лист S9, точные корни
+  регрессионных прогонов (иначе «общих файлов: 0» маскируется под «0
+  регрессий»), запись лога.
+
+**Проверка**
+
+| Проверка | Результат |
+|---|---|
+| `uv run ruff check .` | 0 замечаний |
+| `uv run pytest` | 111 passed, ~12 с |
+| GAZ: 112 файлов, `--assert-no-regression` | регрессий **0** |
+| МЭЗ: 66 файлов, `--assert-no-regression` | регрессий **0** |
+
+**Критерий готовности**
+
+Все сессии плана закрыты. Документация описывает реальное устройство
+проекта после S8, включая единую точку регистрации регистра.
 
 ### S8 — Пайплайн и конфиг (2026-10-19)
 
