@@ -6,6 +6,7 @@ Created on Mon Aug 25 11:23:20 2025
 """
 
 import re
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -22,6 +23,7 @@ from flatregister.hierarchy import (
     spread_levels,
 )
 from flatregister.registers.base import FileProcessor, exclude_values
+from flatregister.registers.spec import RegisterSpec
 
 
 def find_account_from_text(df: pd.DataFrame, search_text: str = "Оборотно-сальдовая ведомость по счету ") -> Optional[str]:
@@ -94,9 +96,50 @@ def create_check_after_process(df: pd.DataFrame, columns_config: dict) -> pd.Dat
     })
 
 
+@dataclass(frozen=True)
+class AccountOSVSpec(RegisterSpec):
+    """Различия между ОСВ счёта УПП и не-УПП.
+
+    ``currency_shift`` — это D2 из «Открытых решений»: в УПП валютная сумма
+    лежит через две строки (код валюты + количество + сумма), в не-УПП — через
+    одну. Значения сохранены как есть; названы явно, чтобы различие не
+    выглядело случайным.
+    """
+
+    quantity_shift: int
+    currency_shift: int
+
+
+UPP_SPEC = AccountOSVSpec(
+    header_word='субконто',
+    header_exact='Субконто',
+    account_column='Субконто',
+    indicator_column='Показа-\nтели',
+    structure_message='Не найден столбец с "Субконто" в первых 30 строках.',
+    recognized_hint='В выгрузке нет строки заголовков со словом «Субконто».',
+    empty_message='ОСВ счета вероятно пустая.',
+    quantity_shift=-1,
+    currency_shift=-2,
+)
+
+NON_UPP_SPEC = AccountOSVSpec(
+    header_word='счет',
+    header_exact='Счет',
+    account_column='Счет',
+    indicator_column='Показа-\nтели',
+    structure_message='Не найден столбец с "Счет" в первых 30 строках.',
+    recognized_hint='В выгрузке нет строки заголовков со словом «Счет».',
+    empty_message='ОСВ счета вероятно пустая.',
+    quantity_shift=-1,
+    currency_shift=-1,
+)
+
+
 class BaseAccountOSVProcessor(FileProcessor):
     """Базовый обработчик для Анализа счета 1С"""
-    
+
+    spec: AccountOSVSpec
+
     def __init__(self):
         super().__init__()
         self.df_type_connection = pd.DataFrame()
@@ -232,25 +275,26 @@ class BaseAccountOSVProcessor(FileProcessor):
     
     def _handle_quantity_currency_data(self, df: pd.DataFrame, desired_order: list) -> pd.DataFrame:
         """Обработка количественных и валютных данных"""
-        if 'Показа-\nтели' in df.columns:
+        indicator = self.spec.indicator_column
+        if indicator in df.columns:
             # Обработка количественных данных
-            if df['Показа-\nтели'].str.startswith('Кол.').any():
+            if df[indicator].str.startswith('Кол.').any():
                 for col in desired_order:
-                    df[f'Количество_{col}'] = df[col].shift(-1)
-            
+                    df[f'Количество_{col}'] = df[col].shift(self.spec.quantity_shift)
+
             # Обработка валютных данных
-            if df['Показа-\nтели'].str.startswith('Вал.').any():
+            if df[indicator].str.startswith('Вал.').any():
                 for col in desired_order:
-                    df[f'ВалютнаяСумма_{col}'] = df[col].shift(-1)
-            
+                    df[f'ВалютнаяСумма_{col}'] = df[col].shift(self.spec.currency_shift)
+
             # Очистка от строк с количеством и валютой
             mask = (
-                (df['Показа-\nтели'] == 'Кол.') |
-                (df['Показа-\nтели'] == 'Вал.') |
-                (df['Показа-\nтели'].str.startswith('Валюта'))
+                (df[indicator] == 'Кол.') |
+                (df[indicator] == 'Вал.') |
+                (df[indicator].str.startswith('Валюта'))
             )
             df = df[~mask]
-        
+
         return df
     
     def _remove_duplicate_rows(self, df: pd.DataFrame, account_col: str, max_level: int) -> pd.DataFrame:
@@ -293,27 +337,30 @@ class BaseAccountOSVProcessor(FileProcessor):
 
 class AccountOSV_UPPFileProcessor(BaseAccountOSVProcessor):
     """Обработчик для Анализа счета 1С УПП"""
-    
+
+    spec = UPP_SPEC
+
     @staticmethod
     def _process_dataframe_optimized(df: pd.DataFrame) -> pd.DataFrame:
         """Поиск шапки таблицы, переименование заголовков, очистка"""
         df = BaseAccountOSVProcessor._clean_dataframe(df)
         
         processor = AccountOSV_UPPFileProcessor()
-        col_idx, header_row_idx = processor._find_header_column(df, 'субконто')
-        
+        spec = processor.spec
+        col_idx, header_row_idx = processor._find_header_column(df, spec.header_word)
+
         if col_idx is None or header_row_idx is None:
             raise RegisterStructureError(
-                'Не найден столбец с "Субконто" в первых 30 строках.',
+                spec.structure_message,
                 hint='Похоже, это не ОСВ счёта. Проверьте, что выбран тот тип '
                      'регистра, который соответствует выгрузке.')
-        
+
         # Проверка на наличие значения "Субконто"
         first_col = df.iloc[:, col_idx].astype(str)
-        if not (first_col == 'Субконто').any():
+        if not (first_col == spec.header_exact).any():
             raise RegisterNotRecognizedError(
                 'Файл не является ОСВ счета 1с.',
-                hint='В выгрузке нет строки заголовков со словом «Субконто».')
+                hint=spec.recognized_hint)
         
         df = processor._process_header(df, header_row_idx, rename_columns=True)
         
@@ -375,14 +422,14 @@ class AccountOSV_UPPFileProcessor(BaseAccountOSVProcessor):
             # Создание столбцов с количеством
             if df['Субконто'].isin(['Количество']).any() or 'Показа-\nтели' in df.columns:
                 for col in desired_order:
-                    df[f'Количество_{col}'] = df[col].shift(-1)
-            
+                    df[f'Количество_{col}'] = df[col].shift(self.spec.quantity_shift)
+
             # Создание столбцов с валютой
             if df['Субконто'].isin(['Валютная сумма']).any() or 'Показа-\nтели' in df.columns:
                 if df['Субконто'].str.startswith('Валюта').any():
                     df['Валюта'] = df['Субконто'].shift(-1)
                 for col in desired_order:
-                    df[f'ВалютнаяСумма_{col}'] = df[col].shift(-2)
+                    df[f'ВалютнаяСумма_{col}'] = df[col].shift(self.spec.currency_shift)
             
             # Очистка от строк с количеством и валютой
             mask = (
@@ -516,27 +563,30 @@ class AccountOSV_UPPFileProcessor(BaseAccountOSVProcessor):
 
 class AccountOSV_NonUPPFileProcessor(BaseAccountOSVProcessor):
     """Обработчик для Анализа счета 1С не УПП"""
-    
+
+    spec = NON_UPP_SPEC
+
     @staticmethod
     def _process_dataframe_optimized(df: pd.DataFrame) -> pd.DataFrame:
         """Поиск шапки таблицы, переименование заголовков, очистка"""
         df = BaseAccountOSVProcessor._clean_dataframe(df)
         
         processor = AccountOSV_NonUPPFileProcessor()
-        col_idx, header_row_idx = processor._find_header_column(df, 'счет')
-        
+        spec = processor.spec
+        col_idx, header_row_idx = processor._find_header_column(df, spec.header_word)
+
         if col_idx is None or header_row_idx is None:
             raise RegisterStructureError(
-                'Не найден столбец с "Счет" в первых 30 строках.',
+                spec.structure_message,
                 hint='Похоже, это не ОСВ счёта. Проверьте, что выбран тот тип '
                      'регистра, который соответствует выгрузке.')
-        
+
         # Проверка на наличие значения "Счет"
         first_col = df.iloc[:, col_idx].astype(str)
-        if not (first_col == 'Счет').any():
+        if not (first_col == spec.header_exact).any():
             raise RegisterNotRecognizedError(
                 'Файл не является ОСВ счета 1с.',
-                hint='В выгрузке нет строки заголовков со словом «Счет».')
+                hint=spec.recognized_hint)
         
         df = processor._process_header(df, header_row_idx, rename_columns=True)
         
