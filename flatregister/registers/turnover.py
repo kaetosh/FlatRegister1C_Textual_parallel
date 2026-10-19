@@ -14,6 +14,13 @@ from flatregister.config import get_accounts_without_subaccount
 from flatregister.dtypes import ensure_column_types, numeric_total
 from flatregister.errors import RegisterEmptyError, RegisterNotRecognizedError, RegisterStructureError
 from flatregister.excel_io import fix_1c_excel_case
+from flatregister.hierarchy import (
+    drop_interim_total_rows,
+    find_word_column,
+    get_col_or_zeros,
+    hierarchy_drop_set,
+    spread_levels,
+)
 from flatregister.registers.base import FileProcessor, exclude_values
 
 
@@ -58,14 +65,7 @@ class Turnover_UPPFileProcessor(FileProcessor):
         df.dropna(axis=0, how='all', inplace=True)
         
         # Ищем столбец, содержащий "Субконто" в первых 30 строках (или меньше, если строк меньше)
-        subkonto_col_idx = None
-        max_rows_to_check = min(30, df.shape[0])  # Проверяем не больше 30 строк
-        
-        for col_idx in range(df.shape[1]):
-            col_values = df.iloc[:max_rows_to_check, col_idx].astype(str).str.strip().str.lower()
-            if 'субконто' in col_values.values:
-                subkonto_col_idx = col_idx
-                break
+        subkonto_col_idx = find_word_column(df, 'субконто')
         
         if subkonto_col_idx is None:
             raise RegisterStructureError(
@@ -180,10 +180,7 @@ class Turnover_UPPFileProcessor(FileProcessor):
             counts = pd.Series(base_cols).value_counts().to_dict()
         
             # Определяем счета с субсчетами и чистые счета
-            keys = list(counts.keys())
-            acc_with_sub = [acc for acc in counts if self._is_parent(acc, keys)]
-            clean_acc = [acc for acc in counts if counts[acc] == 1 and acc not in acc_with_sub]
-            del_acc = set(counts.keys()) - set(clean_acc)
+            del_acc = hierarchy_drop_set(counts)
             
         
             # Обработка счетов с '94'
@@ -282,21 +279,8 @@ class Turnover_UPPFileProcessor(FileProcessor):
             # Заменяем "Количество" на найденные значения
             df.loc[quantity_mask, 'Субконто'] = last_level_values
         
-        # Сначала создаем все Level колонки
-        for level in range(max_level + 1):
-            # Маска для строк данного уровня
-            level_mask = df['Уровень'] == level
-            
-            # Заполняем значения для данного уровня
-            df[f'Level_{level}'] = df['Субконто'].where(level_mask)
-            
-            # Forward fill для значений этого уровня
-            df[f'Level_{level}'] = df[f'Level_{level}'].ffill()
-            
-            # Обнуляем значения там, где уровень выше текущего
-            higher_level_mask = df['Уровень'] < level
-            df.loc[higher_level_mask, f'Level_{level}'] = None
-            
+        spread_levels(df, df['Субконто'])
+        
         df.loc[df[quantity_mask].index, 'Субконто'] = 'Количество'
         
         
@@ -363,13 +347,6 @@ class Turnover_UPPFileProcessor(FileProcessor):
         debit_turnover = 'Дебет_оборот'
         credit_turnover = 'Кредит_оборот'
         
-        # Функция для безопасного получения столбца или Series из нулей, если столбца нет
-        def get_col_or_zeros(df, col):
-            if col in df.columns:
-                return df[col]
-            else:
-                return 0
-        
         # Создаем новые столбцы с проверкой наличия исходных
         df_for_check['Сальдо_начало_до_обработки'] = get_col_or_zeros(df_for_check, start_debit) - get_col_or_zeros(df_for_check, start_credit)
         df_for_check['Сальдо_конец_до_обработки'] = get_col_or_zeros(df_for_check, end_debit) - get_col_or_zeros(df_for_check, end_credit)
@@ -381,26 +358,7 @@ class Turnover_UPPFileProcessor(FileProcessor):
         ''' После разнесения строк в плоский вид, в таблице остаются строки с дублирующими оборотами.
         Например, итоговые обороты, итоги по субконто и т.д. Удаляем.'''
         max_level = df['Уровень'].max()
-        conditions = []
-        
-        for i in range(max_level):
-            condition = (
-                (df['Уровень'] == i) & 
-                (df['Субконто'] == df[f'Level_{i}']) & 
-                (df['Уровень'].shift(-1) > i)
-            )
-            conditions.append(condition)
-        
-        
-        
-        
-        
-        # Объединяем все условия
-        mask = pd.concat(conditions, axis=1).any(axis=1)
-        
-
-        
-        df = df[~mask]
+        df = drop_interim_total_rows(df, 'Субконто', max_level)
 
 
         # Удаляем строки, содержащие значения из списка exclude_values
@@ -510,23 +468,12 @@ class Turnover_NonUPPFileProcessor(FileProcessor):
             Готовая к дальнейшей обработке таблица.
 
         '''
-        MAX_HEADER_ROWS = 30  # Максимальное количество строк для поиска шапки
-        
         # удалим пустые строки и столбцы
         df.dropna(axis=1, how='all', inplace=True)
         df.dropna(axis=0, how='all', inplace=True)
         
-        # перед поиском в третьем столбце слова Счет для установки заголовков
-        # убедимся, что столбцов как минимум три
         # Ищем столбец, содержащий "Счет" в первых 30 строках (или меньше, если строк меньше)
-        subkonto_col_idx = None
-        max_rows_to_check = min(MAX_HEADER_ROWS, df.shape[0])  # Проверяем не больше 30 строк
-        
-        for col_idx in range(df.shape[1]):
-            col_values = df.iloc[:max_rows_to_check, col_idx].astype(str).str.strip().str.lower()
-            if 'счет' in col_values.values:
-                subkonto_col_idx = col_idx
-                break
+        subkonto_col_idx = find_word_column(df, 'счет')
         
         if subkonto_col_idx is None:
             raise RegisterStructureError(
@@ -640,10 +587,7 @@ class Turnover_NonUPPFileProcessor(FileProcessor):
             counts = pd.Series(base_cols).value_counts().to_dict()
         
             # Определяем счета с субсчетами и чистые счета
-            keys = list(counts.keys())
-            acc_with_sub = [acc for acc in counts if self._is_parent(acc, keys)]
-            clean_acc = [acc for acc in counts if counts[acc] == 1 and acc not in acc_with_sub]
-            del_acc = set(counts.keys()) - set(clean_acc)
+            del_acc = hierarchy_drop_set(counts)
         
             # Обработка счетов с '94'
             acc_with_94 = [acc for acc in counts if '94' in acc]
@@ -728,21 +672,8 @@ class Turnover_NonUPPFileProcessor(FileProcessor):
             # Заменяем "Количество" на найденные значения
             df.loc[quantity_mask, 'Счет'] = last_level_values
         
-        # Сначала создаем все Level колонки
-        for level in range(max_level + 1):
-            # Маска для строк данного уровня
-            level_mask = df['Уровень'] == level
-            
-            # Заполняем значения для данного уровня
-            df[f'Level_{level}'] = df['Счет'].where(level_mask)
-            
-            # Forward fill для значений этого уровня
-            df[f'Level_{level}'] = df[f'Level_{level}'].ffill()
-            
-            # Обнуляем значения там, где уровень выше текущего
-            higher_level_mask = df['Уровень'] < level
-            df.loc[higher_level_mask, f'Level_{level}'] = None
-            
+        spread_levels(df, df['Счет'])
+        
         df.loc[df[quantity_mask].index, 'Счет'] = 'Количество'
         
         
@@ -805,13 +736,6 @@ class Turnover_NonUPPFileProcessor(FileProcessor):
         debit_turnover = 'Дебет_оборот'
         credit_turnover = 'Кредит_оборот'
         
-        # Функция для безопасного получения столбца или Series из нулей, если столбца нет
-        def get_col_or_zeros(df, col):
-            if col in df.columns:
-                return df[col]
-            else:
-                return 0
-        
         # Создаем новые столбцы с проверкой наличия исходных
         df_for_check['Сальдо_начало_до_обработки'] = get_col_or_zeros(df_for_check, start_debit) - get_col_or_zeros(df_for_check, start_credit)
         df_for_check['Сальдо_конец_до_обработки'] = get_col_or_zeros(df_for_check, end_debit) - get_col_or_zeros(df_for_check, end_credit)
@@ -823,19 +747,7 @@ class Turnover_NonUPPFileProcessor(FileProcessor):
         Например, итоговые обороты, итоги по субконто и т.д. Удаляем.'''
         
         max_level = df['Уровень'].max()
-        conditions = []
-        
-        for i in range(max_level):
-            condition = (
-                (df['Уровень'] == i) & 
-                (df['Счет'] == df[f'Level_{i}']) & 
-                (df['Уровень'].shift(-1) > i)
-            )
-            conditions.append(condition)
-        
-        # Объединяем все условия
-        mask = pd.concat(conditions, axis=1).any(axis=1)
-        df = df[~mask]
+        df = drop_interim_total_rows(df, 'Счет', max_level)
 
         # Удаляем строки, содержащие значения из списка exclude_values
         df = df[~df['Счет'].isin(exclude_values)]

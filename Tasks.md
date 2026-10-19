@@ -67,7 +67,7 @@ uv run pytest                 # ожидается 103 passed, 1 xfailed
 
 ## Статус
 
-- **Текущая сессия:** S5 — закрыта. Следующая: **S6 (Общие примитивы)**
+- **Текущая сессия:** S6 — закрыта. Следующая: **S7 (УПП / не-УПП)**
 - **Ветка:** `refactor/s0-safety-net`
 - **Baseline: СНЯТ** на 178 реальных выгрузках, два набора:
   - `tools/baseline_gaz.json` — 112 файлов, все шесть регистров, 117 с
@@ -134,8 +134,8 @@ uv run python tools\regress.py --compare tools\baseline.json tools\after.json
 | S3 | Типы данных | **закрыта** |
 | S4 | Мусор | **закрыта** |
 | S5 | Переезд в пакет | **закрыта** |
-| S6 | Общие примитивы | **следующая** |
-| S7 | УПП / не-УПП | не начата |
+| S6 | Общие примитивы | **закрыта** |
+| S7 | УПП / не-УПП | **следующая** |
 | S8 | Пайплайн и конфиг | не начата |
 | S9 | Документация и финал | не начата |
 
@@ -262,17 +262,18 @@ uv run python tools\regress.py --compare tools\baseline.json tools\after.json
 
 `flatregister/hierarchy.py` — по одной реализации вместо копий:
 
-- [ ] поиск столбца счёта в первых 30 строках: 6 копий → 1
-- [ ] pivot уровней `Level_N`: 5 копий → 1
-- [ ] удаление строк-итогов: 4 копии → 1
-- [ ] `acc_with_sub` / `clean_acc` / `del_acc`: 6 копий → 1
-- [ ] `transform_account` (склейка субсчетов): 2 копии → 1
-- [ ] `_split_and_expand`: 2 копии → 1
-- [ ] `get_col_or_zeros`: 3 копии → 1
-- [ ] переименовать коллизию `_fast_keep_first_unique_per_row`
+- [x] поиск столбца счёта в первых 30 строках: 6 копий → 1
+- [x] pivot уровней `Level_N`: 5 копий → 1
+- [x] удаление строк-итогов: 4 копии → 1
+- [x] `acc_with_sub` / `clean_acc` / `del_acc`: 6 копий → 1
+- [x] `transform_account` (склейка субсчетов): 2 копии → 1
+- [x] `_split_and_expand`: 2 копии → 1
+- [x] `get_col_or_zeros`: 3 копии → 1
+- [x] переименовать коллизию `_fast_keep_first_unique_per_row`
       (`card` — numpy, `posting` — `.loc`; одна идея, две разные реализации)
 
-**Критерий готовности:** baseline не изменился.
+**Критерий готовности:** выполнен — baseline не изменился (0 регрессий в обоих
+наборах); `pytest` — 103 passed, 1 xfailed; `ruff` чист.
 
 ### S7 — УПП / не-УПП
 
@@ -370,6 +371,59 @@ text.py  style.tcss  requirements.txt  # не трогаем
 ## Лог сессий
 
 _(записи добавляются снизу вверх)_
+
+### S6 — Общие примитивы (2026-10-19)
+
+**Сделано**
+
+Копии, разбросанные по регистрам, собраны в `flatregister/hierarchy.py`.
+Поведение не менялось — обе регрессии по реальным выгрузкам дают 0 регрессий.
+
+Новые функции в `hierarchy.py`:
+
+- `find_word_column` — поиск столбца-шапки по подстроке в первых 30 строках
+  (turnover ×2, analysis ×2, general_osv ×2 — итого 6 копий цикла → 1)
+- `find_word_column_and_row` — тот же поиск, но с требованием точного совпадения
+  строки; отдельно сохранено ради `account_osv._find_header_column`, где точное
+  совпадение — часть контракта (иначе пограничные файлы перестали бы падать
+  `RegisterNotRecognizedError`)
+- `spread_levels` — разнос вертикальной иерархии в `Level_0..Level_N`
+  (turnover ×2, analysis ×2, account_osv `_spread_vertical_data`,
+  general_osv `pivot_hierarchy_to_columns` — 5 копий → 1)
+- `drop_interim_total_rows` — удаление строк-итогов (turnover ×2, analysis,
+  account_osv `_remove_duplicate_rows` — 4 копии → 1)
+- `hierarchy_drop_set` — `del_acc` из частот счетов (turnover ×2, analysis ×4 —
+  6 копий `acc_with_sub`/`clean_acc`/`del_acc` → 1)
+- `collapse_subaccount` — склейка субсчёта к основному (analysis ×2 → 1)
+- `get_col_or_zeros` — turnover (локальные ×2) + account_osv (модульная) → 1
+- `split_and_expand` — `card` / `posting` → 1
+- `keep_first_unique_per_row` — единая реализация posting-стиля (`.loc` +
+  `row.duplicated()`); numpy-версия card отброшена. Эквивалентна по результату,
+  но сохраняет index и dtypes
+- `is_parent` перенесён в `hierarchy.py`; `FileProcessor._is_parent` делегирует
+
+`FileProcessor`-обёртки (`shiftable_level` и т.п.) не тронуты — вызовы в
+наследниках не менялись. `_find_header_column` / `_spread_vertical_data` /
+`_remove_duplicate_rows` в `account_osv` оставлены тонкими делегатами.
+
+**Открытые решения, затронутые сессией**
+
+- D1 / D2 (`ВалютнаяСумма_*`, `shift(-1)` против `shift(-2)`): не затронуты.
+  `spread_levels` и `drop_interim_total_rows` воспроизводят прежнюю разметку,
+  а сдвиги остаются в самих процессорах.
+
+**Проверка**
+
+| Проверка | Результат |
+|---|---|
+| `uv run ruff check .` | 0 замечаний |
+| `uv run pytest -q` | 103 passed, 1 xfailed |
+| `regress.py --root __ВЫГРУЗКИ_ГАЗ` + `--assert-no-regression` | 112 файлов, регрессий **0** |
+| `regress.py --root Для фикса Обработчиув регистров` + `--assert-no-regression` | 72 файла, регрессий **0** |
+
+Набор МЭЗ пополнился с 66 до 72 файлов — папка на диске больше эталона;
+`--assert-no-regression` сравнивает только пересечение, лишние файлы
+регрессией не считаются.
 
 ### S5 — Переезд в пакет (2026-10-18)
 

@@ -13,6 +13,7 @@ import pandas as pd
 from flatregister.dtypes import ensure_column_types, to_numeric
 from flatregister.errors import RegisterEmptyError, RegisterStructureError
 from flatregister.excel_io import fix_1c_excel_case
+from flatregister.hierarchy import keep_first_unique_per_row, split_and_expand
 from flatregister.registers.base import FileProcessor
 
 
@@ -26,17 +27,7 @@ class Posting_UPPFileProcessor(FileProcessor):
         Оставляет только первое вхождение значения в строке, остальные заменяет на NaN.
         Работает во всех версиях Pandas.
         """
-        result = df.copy()
-        
-        # Применяем к каждой строке
-        for idx in df.index:
-            row = df.loc[idx]
-            # Находим дубликаты в строке
-            duplicates = row.duplicated()
-            # Заменяем дубликаты на NaN
-            result.loc[idx, duplicates] = np.nan
-        
-        return result
+        return keep_first_unique_per_row(df)
 
     @staticmethod
     def _process_quantity_section(df: pd.DataFrame) -> pd.DataFrame:
@@ -239,18 +230,7 @@ class Posting_NonUPPFileProcessor(FileProcessor):
     @staticmethod
     def _split_and_expand(df: pd.DataFrame, col_name: str, prefix: str) -> None:
         """Оптимизированное разбиение столбца с разделителем \n"""
-        if col_name not in df.columns:
-            return
-            
-        new_cols = df[col_name].str.split('\n', expand=True)
-        if new_cols.empty:
-            df.drop(columns=[col_name], inplace=True)
-            return
-            
-        n_cols = new_cols.shape[1]
-        new_cols.columns = [f'{prefix}_{i+1}' for i in range(n_cols)]
-        df[new_cols.columns] = new_cols
-        df.drop(columns=[col_name], inplace=True)
+        split_and_expand(df, col_name, prefix)
     
     @staticmethod    
     def _rename_columns_after_pokaz(df: pd.DataFrame) -> pd.DataFrame:

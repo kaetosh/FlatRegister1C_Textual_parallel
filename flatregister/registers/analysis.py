@@ -14,6 +14,12 @@ from flatregister.config import get_accounts_without_subaccount
 from flatregister.dtypes import coerce_numeric, ensure_column_types
 from flatregister.errors import RegisterEmptyError, RegisterNotRecognizedError, RegisterStructureError
 from flatregister.excel_io import fix_1c_excel_case
+from flatregister.hierarchy import (
+    collapse_subaccount,
+    find_word_column,
+    hierarchy_drop_set,
+    spread_levels,
+)
 from flatregister.registers.base import FileProcessor, exclude_values
 
 
@@ -86,21 +92,12 @@ class Analisys_UPPFileProcessor(FileProcessor):
 
         '''
         
-        MAX_HEADER_ROWS = 30  # Максимальное количество строк для поиска шапки
-        
         # удалим пустые строки и столбцы
         df.dropna(axis=1, how='all', inplace=True)
         df.dropna(axis=0, how='all', inplace=True)
         
         # Ищем столбец, содержащий "Счет" в первых 30 строках (или меньше, если строк меньше)
-        subkonto_col_idx = None
-        max_rows_to_check = min(MAX_HEADER_ROWS, df.shape[0])  # Проверяем не больше 30 строк
-        
-        for col_idx in range(df.shape[1]):
-            col_values = df.iloc[:max_rows_to_check, col_idx].astype(str).str.strip().str.lower()
-            if 'счет' in col_values.values:
-                subkonto_col_idx = col_idx
-                break
+        subkonto_col_idx = find_word_column(df, 'счет')
         
         if subkonto_col_idx is None:
             raise RegisterStructureError(
@@ -241,20 +238,7 @@ class Analisys_UPPFileProcessor(FileProcessor):
 
         '''Разносим вертикальные данные в горизонтальные'''
         
-        max_level = df['Уровень'].max()
-        for level in range(max_level + 1):
-            # Маска для строк данного уровня
-            level_mask = df['Уровень'] == level
-            
-            # Заполняем значения для данного уровня
-            df[f'Level_{level}'] = df['Счет'].where(level_mask)
-            
-            # Forward fill для значений этого уровня
-            df[f'Level_{level}'] = df[f'Level_{level}'].ffill()
-            
-            # Обнуляем значения там, где уровень выше текущего
-            higher_level_mask = df['Уровень'] < level
-            df.loc[higher_level_mask, f'Level_{level}'] = None
+        spread_levels(df, df['Счет'])
     
         # Создаем столбец Корр_счет
         df['Корр_счет'] = np.where(is_valid_account, kor_schet, None)
@@ -311,28 +295,17 @@ class Analisys_UPPFileProcessor(FileProcessor):
                 
         # Счета с субсчетами
         all_acc_dict = df_for_check['Кор.счет_ЧЕК'].value_counts().to_dict()
-        acc_with_sub = [i for i in all_acc_dict if self._is_parent(i, list(all_acc_dict.keys()))]
-        clean_acc = [i for i in all_acc_dict if all_acc_dict[i] == 1 and i not in acc_with_sub]
-        del_acc = set(all_acc_dict.keys()) - set(clean_acc)
+        del_acc = hierarchy_drop_set(all_acc_dict)
         df_for_check = df_for_check[~df_for_check['Кор.счет_ЧЕК'].isin(del_acc)].copy()
         
         # Удаление субсчетов для счетов без субсчетов
         accounts_without_subaccount = get_accounts_without_subaccount()
         
-        # Функция для преобразования счета
-        def transform_account(account):
-            # Разделяем счет по точке и берем первую часть
-            account_parts = str(account).split('.')
-            main_account = account_parts[0]
-            
-            # Если основная часть счета есть в списке для преобразования
-            if main_account in accounts_without_subaccount:
-                return main_account
-            else:
-                return account
-        
+
         # Применяем преобразование к столбцу Кор.счет_ЧЕК
-        df_for_check['Кор.счет_ЧЕК'] = df_for_check['Кор.счет_ЧЕК'].apply(transform_account)
+        df_for_check['Кор.счет_ЧЕК'] = df_for_check['Кор.счет_ЧЕК'].apply(
+            lambda account: collapse_subaccount(account, accounts_without_subaccount)
+        )
         
         # Агрегируем данные суммированием
         df_for_check = df_for_check.groupby('Кор.счет_ЧЕК', as_index=False).agg({
@@ -355,11 +328,7 @@ class Analisys_UPPFileProcessor(FileProcessor):
         all_acc_dict = unique_df['Корр_счет'].value_counts().to_dict()
         
         # Счета с субсчетами
-        acc_with_sub = [i for i in all_acc_dict if self._is_parent(i, list(all_acc_dict.keys()))]
-        
-        clean_acc = [i for i in all_acc_dict if all_acc_dict[i] == 1 and i not in acc_with_sub]
-        
-        del_acc = set(all_acc_dict.keys()) - set(clean_acc)
+        del_acc = hierarchy_drop_set(all_acc_dict)
         
         # Обработка счетов 94
         acc_with_94 = [i for i in all_acc_dict if '94' in i]
@@ -643,21 +612,12 @@ class Analisys_NonUPPFileProcessor(FileProcessor):
 
         '''
         
-        MAX_HEADER_ROWS = 30  # Максимальное количество строк для поиска шапки
-        
         # удалим пустые строки и столбцы
         df.dropna(axis=1, how='all', inplace=True)
         df.dropna(axis=0, how='all', inplace=True)
         
         # Ищем столбец, содержащий "Субконто" в первых 30 строках (или меньше, если строк меньше)
-        subkonto_col_idx = None
-        max_rows_to_check = min(MAX_HEADER_ROWS, df.shape[0])  # Проверяем не больше 30 строк
-        
-        for col_idx in range(df.shape[1]):
-            col_values = df.iloc[:max_rows_to_check, col_idx].astype(str).str.strip().str.lower()
-            if 'счет' in col_values.values:
-                subkonto_col_idx = col_idx
-                break
+        subkonto_col_idx = find_word_column(df, 'счет')
         
         if subkonto_col_idx is None:
             raise RegisterStructureError(
@@ -771,20 +731,7 @@ class Analisys_NonUPPFileProcessor(FileProcessor):
 
         '''Разносим вертикальные данные в горизонтальные'''
         
-        max_level = df['Уровень'].max()
-        for level in range(max_level + 1):
-            # Маска для строк данного уровня
-            level_mask = df['Уровень'] == level
-            
-            # Заполняем значения для данного уровня
-            df[f'Level_{level}'] = df['Счет'].where(level_mask)
-            
-            # Forward fill для значений этого уровня
-            df[f'Level_{level}'] = df[f'Level_{level}'].ffill()
-            
-            # Обнуляем значения там, где уровень выше текущего
-            higher_level_mask = df['Уровень'] < level
-            df.loc[higher_level_mask, f'Level_{level}'] = None
+        spread_levels(df, df['Счет'])
         
         # Создаем столбец Корр_счет
         df['Корр_счет'] = np.where(is_valid_account, kor_schet, None)
@@ -835,31 +782,17 @@ class Analisys_NonUPPFileProcessor(FileProcessor):
         #------------------------------------------
         # Счета с субсчетами
         all_acc_dict = df_for_check['Кор.счет_ЧЕК'].value_counts().to_dict()
-        acc_with_sub = [i for i in all_acc_dict if self._is_parent(i, list(all_acc_dict.keys()))]
-        
-        clean_acc = [i for i in all_acc_dict if all_acc_dict[i] == 1 and i not in acc_with_sub]
-        
-        del_acc = set(all_acc_dict.keys()) - set(clean_acc)
+        del_acc = hierarchy_drop_set(all_acc_dict)
                
         df_for_check = df_for_check[~df_for_check['Кор.счет_ЧЕК'].isin(del_acc)].copy()
         
         # Удаление субсчетов для счетов без субсчетов
         accounts_without_subaccount = get_accounts_without_subaccount()
 
-        # Функция для преобразования счета
-        def transform_account(account):
-            # Разделяем счет по точке и берем первую часть
-            account_parts = str(account).split('.')
-            main_account = account_parts[0]
-            
-            # Если основная часть счета есть в списке для преобразования
-            if main_account in accounts_without_subaccount:
-                return main_account
-            else:
-                return account
-
         # Применяем преобразование к столбцу Кор.счет_ЧЕК
-        df_for_check['Кор.счет_ЧЕК'] = df_for_check['Кор.счет_ЧЕК'].apply(transform_account)
+        df_for_check['Кор.счет_ЧЕК'] = df_for_check['Кор.счет_ЧЕК'].apply(
+            lambda account: collapse_subaccount(account, accounts_without_subaccount)
+        )
 
         # Агрегируем данные суммированием
         df_for_check = df_for_check.groupby('Кор.счет_ЧЕК', as_index=False).agg({
@@ -888,9 +821,7 @@ class Analisys_NonUPPFileProcessor(FileProcessor):
         all_acc_dict = unique_df['Корр_счет'].value_counts().to_dict()
         
         # Счета с субсчетами
-        acc_with_sub = [i for i in all_acc_dict if self._is_parent(i, list(all_acc_dict.keys()))]
-        clean_acc = [i for i in all_acc_dict if all_acc_dict[i] == 1 and i not in acc_with_sub]
-        del_acc = set(all_acc_dict.keys()) - set(clean_acc)
+        del_acc = hierarchy_drop_set(all_acc_dict)
         
         
         # Обработка счетов 94

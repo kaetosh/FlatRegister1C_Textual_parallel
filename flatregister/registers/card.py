@@ -15,6 +15,7 @@ import pandas as pd
 from flatregister.dtypes import ensure_column_types, to_numeric
 from flatregister.errors import RegisterEmptyError, RegisterNotRecognizedError, RegisterStructureError
 from flatregister.excel_io import fix_1c_excel_case
+from flatregister.hierarchy import keep_first_unique_per_row, split_and_expand
 from flatregister.registers.base import FileProcessor
 
 
@@ -23,21 +24,7 @@ class Card_UPPFileProcessor(FileProcessor):
     
     @staticmethod
     def _fast_keep_first_unique_per_row(df: pd.DataFrame) -> pd.DataFrame:
-        arr = df.values
-        mask = np.ones_like(arr, dtype=bool)
-        
-        for i in range(arr.shape[0]):
-            seen = set()
-            for j in range(arr.shape[1]):
-                val = arr[i, j]
-                if pd.isna(val):
-                    continue
-                if val in seen:
-                    mask[i, j] = False
-                else:
-                    seen.add(val)
-        
-        return pd.DataFrame(np.where(mask, arr, np.nan), columns=df.columns)
+        return keep_first_unique_per_row(df)
     
     def _sum_columns_between(self, df: pd.DataFrame, start_col: str, end_col: str) -> pd.Series:
         """Суммирует значения всех столбцов между start_col и end_col"""
@@ -179,17 +166,7 @@ class Card_NonUPPFileProcessor(FileProcessor):
     @staticmethod
     def _split_and_expand(df: pd.DataFrame, col_name: str, prefix: str) -> None:
         """Разбивает столбец с разделителем \n"""
-        if col_name not in df.columns:
-            return
-            
-        new_cols = df[col_name].str.split('\n', expand=True)
-        if new_cols is None or new_cols.empty:
-            df.drop(columns=[col_name], inplace=True)
-            return
-            
-        new_cols.columns = [f'{prefix}_{i+1}' for i in range(new_cols.shape[1])]
-        df[new_cols.columns] = new_cols
-        df.drop(columns=[col_name], inplace=True)
+        split_and_expand(df, col_name, prefix)
 
     def _extract_special_data(
         self,

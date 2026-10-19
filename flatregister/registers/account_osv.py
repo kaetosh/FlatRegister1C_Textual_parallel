@@ -15,6 +15,12 @@ import pandas as pd
 from flatregister.dtypes import MONEY_COLUMNS, ensure_column_types, numeric_total
 from flatregister.errors import RegisterEmptyError, RegisterNotRecognizedError, RegisterStructureError
 from flatregister.excel_io import fix_1c_excel_case
+from flatregister.hierarchy import (
+    drop_interim_total_rows,
+    find_word_column_and_row,
+    get_col_or_zeros,
+    spread_levels,
+)
 from flatregister.registers.base import FileProcessor, exclude_values
 
 
@@ -48,11 +54,6 @@ def find_account_from_text(df: pd.DataFrame, search_text: str = "Оборотн�
                     if match:
                         return match.group(1)
     return None
-
-
-def get_col_or_zeros(df: pd.DataFrame, col: str):
-    """Безопасное получение столбца или Series из нулей, если столбца нет"""
-    return df[col] if col in df.columns else 0
 
 
 def calculate_check_values(df: pd.DataFrame, columns_config: dict) -> pd.DataFrame:
@@ -119,22 +120,11 @@ class BaseAccountOSVProcessor(FileProcessor):
     def _find_header_column(self, df: pd.DataFrame, search_value: str, max_rows: int = 30) -> Tuple[Optional[int], Optional[int]]:
         """
         Поиск столбца с заголовком и строки с искомым значением
-        
+
         Returns:
             (col_idx, row_idx) или (None, None) если не найдено
         """
-        max_rows_to_check = min(max_rows, df.shape[0])
-        
-        for col_idx in range(df.shape[1]):
-            col_values = df.iloc[:max_rows_to_check, col_idx].astype(str).str.strip().str.lower()
-            if search_value in col_values.values:
-                # Находим индекс строки с точным совпадением
-                mask = col_values == search_value
-                if mask.any():
-                    row_idx = mask.idxmax()
-                    return col_idx, row_idx
-        
-        return None, None
+        return find_word_column_and_row(df, search_value, max_rows)
     
     def _process_header(self, df: pd.DataFrame, header_row_idx: int, rename_columns: bool = False) -> pd.DataFrame:
         """Установка заголовков и очистка данных"""
@@ -234,13 +224,7 @@ class BaseAccountOSVProcessor(FileProcessor):
             df.loc[quantity_mask, account_col] = last_level_values
         
         # Создаем Level колонки
-        for level in range(max_level + 1):
-            level_mask = df['Уровень'] == level
-            df[f'Level_{level}'] = df[account_col].where(level_mask)
-            df[f'Level_{level}'] = df[f'Level_{level}'].ffill()
-            
-            higher_level_mask = df['Уровень'] < level
-            df.loc[higher_level_mask, f'Level_{level}'] = None
+        spread_levels(df, df[account_col])
         
         df.loc[df[quantity_mask].index, account_col] = 'Количество'
         
@@ -271,20 +255,7 @@ class BaseAccountOSVProcessor(FileProcessor):
     
     def _remove_duplicate_rows(self, df: pd.DataFrame, account_col: str, max_level: int) -> pd.DataFrame:
         """Удаление дублирующихся строк"""
-        conditions = []
-        
-        for i in range(max_level):
-            condition = (
-                (df['Уровень'] == i) & 
-                (df[account_col] == df[f'Level_{i}']) & 
-                (df['Уровень'].shift(-1) > i)
-            )
-            conditions.append(condition)
-        
-        mask = pd.concat(conditions, axis=1).any(axis=1)
-        df = df[~mask]
-        
-        return df
+        return drop_interim_total_rows(df, account_col, max_level)
     
     def _create_check_tables(self, df: pd.DataFrame, df_for_check: pd.DataFrame, file_name: str) -> pd.DataFrame:
         """Создание и возврат таблицы для проверки"""

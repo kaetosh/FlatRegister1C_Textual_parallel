@@ -1,11 +1,17 @@
-"""Общие примитивы иерархии счетов: распознавание счетов, сдвиг уровней.
+"""Общие примитивы иерархии счетов: распознавание счетов, сдвиг уровней,
+поиск шапки, разнос уровней, отсев промежуточных итогов и служебные операции
+над колонками.
 
 Функции вынесены из методов ``FileProcessor``
 (``register_processors/class_processor.py`` → ``flatregister/registers/base.py``)
-в Сессии S5 плана рефакторинга (см. Tasks.md). ``FileProcessor`` сохраняет
-одноимённые методы-обёртки, чтобы вызовы ``self.shiftable_level(...)`` и т.п.
-в наследниках не менялись. Полное объединение копий по регистрам — Сессия S6.
+в Сессии S5 плана рефакторинга (см. Tasks.md), а общие для нескольких
+регистров копии собраны здесь в Сессии S6. ``FileProcessor`` сохраняет
+одноимённые методы-обёртки (``shiftable_level`` и т.п.), чтобы вызовы в
+наследниках не менялись.
 """
+from typing import Dict, List, Optional, Tuple
+
+import numpy as np
 import pandas as pd
 
 from flatregister.dtypes import level_columns
@@ -141,3 +147,126 @@ def max_level_column(df: pd.DataFrame) -> str:
                 max_level_column = col
 
     return max_level_column
+
+
+def is_parent(account: str, accounts: List[str]) -> bool:
+    """Есть ли у счёта хотя бы один субсчёт в списке."""
+    return any(acc.startswith(account + '.') and acc != account for acc in accounts)
+
+
+def _header_values(df: pd.DataFrame, col_idx: int, max_rows: int) -> pd.Series:
+    """Значения колонки в первых ``max_rows`` строках, нормализованные к нижнему регистру."""
+    return df.iloc[:max_rows, col_idx].astype(str).str.strip().str.lower()
+
+
+def find_word_column(df: pd.DataFrame, word: str, max_rows: int = 30) -> Optional[int]:
+    """Индекс первого столбца, в первых 30 строках которого встречается ``word``.
+
+    Слово передаётся уже в нижнем регистре. Возвращает ``None``, если столбец
+    не найден.
+    """
+    max_rows_to_check = min(max_rows, df.shape[0])
+    for col_idx in range(df.shape[1]):
+        if word in _header_values(df, col_idx, max_rows_to_check).values:
+            return col_idx
+    return None
+
+
+def find_word_column_and_row(df: pd.DataFrame, word: str,
+                             max_rows: int = 30) -> Tuple[Optional[int], Optional[int]]:
+    """Индекс столбца со словом ``word`` и строки с точным совпадением ``word``.
+
+    Возвращает ``(col_idx, row_idx)`` или ``(None, None)``. Точное совпадение
+    ищется по нормализованному значению (нижний регистр, без пробелов).
+    """
+    max_rows_to_check = min(max_rows, df.shape[0])
+    for col_idx in range(df.shape[1]):
+        values = _header_values(df, col_idx, max_rows_to_check)
+        if word not in values.values:
+            continue
+        mask = values == word
+        if mask.any():
+            return col_idx, mask.idxmax()
+    return None, None
+
+
+def spread_levels(df: pd.DataFrame, values: pd.Series,
+                  level_col: str = 'Уровень') -> int:
+    """Разносит вертикальные иерархические данные в столбцы ``Level_0``, ``Level_1``, ...
+
+    ``values`` — источник значений для уровней (счёт, склейка счёта с
+    наименованием и т.п.). Возвращает максимальный уровень.
+    """
+    max_level = df[level_col].max()
+    for level in range(max_level + 1):
+        level_mask = df[level_col] == level
+        df[f'Level_{level}'] = values.where(level_mask)
+        df[f'Level_{level}'] = df[f'Level_{level}'].ffill()
+        df.loc[df[level_col] < level, f'Level_{level}'] = None
+    return max_level
+
+
+def drop_interim_total_rows(df: pd.DataFrame, account_col: str, max_level: int) -> pd.DataFrame:
+    """Удаляет строки промежуточных итогов.
+
+    После разноса строк в плоский вид остаются дублирующие обороты (итоги по
+    субконто и т.п.). Строка уровня нижележащего счёта, совпадающая с
+    значением ``Level_i`` и открывающая более глубокий уровень, отбрасывается.
+    """
+    conditions = []
+    for i in range(max_level):
+        conditions.append(
+            (df['Уровень'] == i)
+            & (df[account_col] == df[f'Level_{i}'])
+            & (df['Уровень'].shift(-1) > i)
+        )
+    mask = pd.concat(conditions, axis=1).any(axis=1)
+    return df[~mask]
+
+
+def hierarchy_drop_set(counts: Dict[str, int]) -> set:
+    """Счета, раскрытые субсчетами либо задвоенные, — их колонки уходят из отчёта.
+
+    ``counts`` — частоты встречаемости счетов (результат ``value_counts``).
+    """
+    keys = list(counts.keys())
+    acc_with_sub = [acc for acc in counts if is_parent(acc, keys)]
+    clean_acc = [acc for acc in counts if counts[acc] == 1 and acc not in acc_with_sub]
+    return set(counts.keys()) - set(clean_acc)
+
+
+def collapse_subaccount(account, accounts_without_subaccount: List[str]):
+    """Сводит субсчёт к основному счёту, если тот указан в настройках."""
+    main_account = str(account).split('.')[0]
+    if main_account in accounts_without_subaccount:
+        return main_account
+    return account
+
+
+def get_col_or_zeros(df: pd.DataFrame, col: str):
+    """Столбец ``col`` или ``0``, если такого столбца нет."""
+    return df[col] if col in df.columns else 0
+
+
+def split_and_expand(df: pd.DataFrame, col_name: str, prefix: str) -> None:
+    """Разбивает столбец с разделителем ``\\n`` на столбцы ``{prefix}_1``, ``{prefix}_2``, ..."""
+    if col_name not in df.columns:
+        return
+
+    new_cols = df[col_name].str.split('\n', expand=True)
+    if new_cols is None or new_cols.empty:
+        df.drop(columns=[col_name], inplace=True)
+        return
+
+    new_cols.columns = [f'{prefix}_{i + 1}' for i in range(new_cols.shape[1])]
+    df[new_cols.columns] = new_cols
+    df.drop(columns=[col_name], inplace=True)
+
+
+def keep_first_unique_per_row(df: pd.DataFrame) -> pd.DataFrame:
+    """Оставляет только первое вхождение значения в каждой строке, остальные — ``NaN``."""
+    result = df.copy()
+    for idx in df.index:
+        duplicates = df.loc[idx].duplicated()
+        result.loc[idx, duplicates] = np.nan
+    return result

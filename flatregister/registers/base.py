@@ -19,7 +19,12 @@ import pandas as pd
 import xlwings as xw
 
 from flatregister.errors import RegisterNotRecognizedError
-from flatregister.hierarchy import is_accounting_code, max_level_column, shift_levels
+from flatregister.hierarchy import (
+    is_accounting_code,
+    is_parent,
+    max_level_column,
+    shift_levels,
+)
 
 '''
 Строки с данными значениями будут удалены из регистров,
@@ -50,12 +55,14 @@ class FileProcessor(ABC):
     def _is_parent(account: str, accounts: List[str]) -> bool:
         """
         Проверяет, есть ли субсчета у заданного счета.
-    
+
+        Делегирует в :func:`flatregister.hierarchy.is_parent`.
+
         :param account: Счет, для которого проверяются субсчета.
         :param accounts: Список всех счетов.
         :return: True, если есть хотя бы один субсчет; иначе False.
         """
-        return any(acc.startswith(account + '.') and acc != account for acc in accounts)
+        return is_parent(account, accounts)
     
     @staticmethod
     def _is_accounting_code_vectorized(series: pd.Series) -> pd.Series:

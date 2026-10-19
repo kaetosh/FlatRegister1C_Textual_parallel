@@ -15,6 +15,7 @@ from flatregister.config import get_keep_subaccounts
 from flatregister.dtypes import ensure_column_types, to_numeric
 from flatregister.errors import RegisterEmptyError, RegisterNotRecognizedError, RegisterStructureError
 from flatregister.excel_io import fix_1c_excel_case
+from flatregister.hierarchy import find_word_column, spread_levels
 from flatregister.registers.base import FileProcessor
 
 
@@ -34,14 +35,8 @@ def pivot_hierarchy_to_columns(df, separator='_'):
     pandas.DataFrame
         DataFrame с добавленными колонками Level_0, Level_1, ...
     """
-    max_level = df['Уровень'].max()
-    for level in range(max_level + 1):
-        level_mask = df['Уровень'] == level
-        combined = df['Счет'].astype(str) + separator + df['Наименование'].astype(str)
-        df[f'Level_{level}'] = combined.where(level_mask)
-        df[f'Level_{level}'] = df[f'Level_{level}'].ffill()
-        higher_level_mask = df['Уровень'] < level
-        df.loc[higher_level_mask, f'Level_{level}'] = None
+    combined = df['Счет'].astype(str) + separator + df['Наименование'].astype(str)
+    spread_levels(df, combined)
     return df
 
 
@@ -150,21 +145,12 @@ class GeneralOSV_UPPFileProcessor(BaseOSVFileProcessor):
     """Обработчик для ОСВ из 1С УПП (старый формат)."""
 
     def _process_dataframe_optimized(self, df: pd.DataFrame) -> pd.DataFrame:
-        MAX_HEADER_ROWS = 30
-
         df = df.replace('', np.nan)
         df.dropna(axis=1, how='all', inplace=True)
         df.dropna(axis=0, how='all', inplace=True)
 
-        max_rows_to_check = min(MAX_HEADER_ROWS, len(df))
-
         # Поиск столбца со словом "счет"
-        account_col_idx = None
-        for col_idx in range(df.shape[1]):
-            col_values = df.iloc[:max_rows_to_check, col_idx].astype(str).str.strip().str.lower()
-            if 'счет' in col_values.values:
-                account_col_idx = col_idx
-                break
+        account_col_idx = find_word_column(df, 'счет')
         if account_col_idx is None:
             raise RegisterStructureError(
                 'Не найден столбец с "Счет" в первых 30 строках.',
@@ -284,13 +270,7 @@ class GeneralOSV_NonUPPFileProcessor(BaseOSVFileProcessor):
         df.dropna(axis=0, how='all', inplace=True)
 
         # Поиск столбца "Счет"
-        account_col_idx = None
-        max_rows_to_check = min(30, df.shape[0])
-        for col_idx in range(df.shape[1]):
-            col_values = df.iloc[:max_rows_to_check, col_idx].astype(str).str.strip().str.lower()
-            if 'счет' in col_values.values:
-                account_col_idx = col_idx
-                break
+        account_col_idx = find_word_column(df, 'счет')
         if account_col_idx is None:
             raise RegisterStructureError(
                 'Не найден столбец с "Счет" в первых 30 строках.',
