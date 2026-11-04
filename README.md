@@ -70,5 +70,4 @@ Nuitka в проекте вынесена в группу зависимосте
 uv run --group build nuitka --standalone --include-data-file="style.tcss=style.tcss" --include-package=flatregister --include-package=ui --include-package=rich --include-package=rich._unicode_data main.py
 ```
 `--include-data-file` для `style.tcss` обязателен (файл остаётся в корне). `config.json` при сборке не нужен: он создаётся при первом запуске рядом с `.exe` (или в `%APPDATA%\FlatRegister1C\`). `main.py` и `text.py` — обычные Python-модули и подхватываются импортом.
-## Готовая сборка доступна по адресу:
-https://disk.yandex.ru/d/1SCkBNBGMZcb3Q
+
