@@ -109,7 +109,9 @@ class RegisterScreen(Screen):
     """Экран с требованиями к выбранному регистру
     и полем для перетягивания в него файлов/папки для обработки"""
 
-    BINDINGS = ESC_BINDING
+    BINDINGS = ESC_BINDING + [
+        Binding("f3", "open_settings", "Настройки регистра", key_display="F3"),
+    ]
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -143,6 +145,11 @@ class RegisterScreen(Screen):
             )
             return
         self.app.push_screen(SettingsScreen(register_type=self.app.register))
+
+    def check_action(self, action: str, parameters: tuple) -> bool | None:
+        if action == "open_settings":
+            return self.app.register in ["analisys", "turnover", "generalosv"]
+        return True
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         """Обработчик нажатия Enter в поле ввода."""
@@ -331,6 +338,14 @@ class SettingsScreen(ModalScreen):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Обрабатывает нажатие кнопки."""
+        if event.button.id == "button-settings-modal":
+            # Общие настройки: параллельная обработка
+            parallel_value = bool(self.query_one("#switch-general-header", Switch).value)
+            updates = {"general_settings": {"parallel_processing": parallel_value}}
+            update_config(updates=updates)
+
+            # Закрываем модальное окно
+            self.dismiss()
         if event.button.id == "button-save-settings-modal":
             if self.register_type in ["analisys", "turnover"]:
                 selected_values = self.query_one(SelectionList).selected
@@ -467,6 +482,14 @@ class SettingsScreenRegister(ModalScreen):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Обрабатывает нажатие кнопки."""
+        if event.button.id == "button-settings-modal":
+            # Общие настройки: параллельная обработка
+            parallel_value = bool(self.query_one("#switch-general-header", Switch).value)
+            updates = {"general_settings": {"parallel_processing": parallel_value}}
+            update_config(updates=updates)
+
+            # Закрываем модальное окно
+            self.dismiss()
         if event.button.id == "button-save-settings-modal":
             if self.register_type in ["analisys", "turnover"]:
                 selected_values = self.query_one(SelectionList).selected
