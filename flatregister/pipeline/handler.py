@@ -187,7 +187,7 @@ class FileHandler:
         result_collector = ResultCollector(self.result.register_type)
 
         # Проверка условия параллельной обработки
-        if self.parallel and self.result.register_type != 'turnover':
+        if self.parallel:
             self._process_directory_parallel(excel_files, progress_callback, result_collector)
         else:
             total_files = len(excel_files)

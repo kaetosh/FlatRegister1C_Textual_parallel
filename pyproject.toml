@@ -27,7 +27,6 @@ dependencies = [
     "typing_extensions==4.15.0",
     "tzdata==2025.3",
     "uc-micro-py==1.0.3",
-    "xlwings==0.33.20",
 ]
 
 [dependency-groups]

@@ -234,6 +234,8 @@ def без_excel(monkeypatch):
     """
     import flatregister.registers.base as class_processor
 
-    monkeypatch.setattr(class_processor, "xw", _StubXw)
-    # Пауза в полсекунды нужна ради COM, в тестах она только тянет время.
-    monkeypatch.setattr(class_processor.time, "sleep", lambda seconds: None)
+    if hasattr(class_processor, "xw"):
+        monkeypatch.setattr(class_processor, "xw", _StubXw)
+    if hasattr(class_processor, "time"):
+        # Пауза в полсекунды нужна ради COM, в тестах она только тянет время.
+        monkeypatch.setattr(class_processor.time, "sleep", lambda seconds: None)

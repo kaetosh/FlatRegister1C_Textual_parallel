@@ -258,7 +258,7 @@ class SettingsScreen(ModalScreen):
                     id="horizontal-general-header-settings-modal",
                 ),
                 Static(
-                    "¹не применяется к регистрам Обороты счета",
+
                     id="statics-no-turnover-settings-modal",
                 ),
                 Horizontal(
@@ -397,7 +397,7 @@ class SettingsScreenRegister(ModalScreen):
                     id="horizontal-general-header-settings-modal",
                 ),
                 Static(
-                    "¹не применяется к регистрам Обороты счета",
+
                     id="statics-no-turnover-settings-modal",
                 ),
                 Horizontal(

@@ -5,6 +5,7 @@
 """
 import math
 import os
+import re
 import subprocess
 import sys
 import zipfile
@@ -282,3 +283,39 @@ def open_file(file_path: str) -> None:
     except OSError as error:
         _log.warning("Итоговый файл создан, но не открылся автоматически: %s (%s)",
                      file_path, error)
+
+
+def get_displayed_value(cell) -> str:
+    """Возвращает отображаемое (как в Excel) значение ячейки.
+
+    Чистый Python-аналог ``cell.api.Text`` из xlwings: использует
+    ``cell.value`` и ``cell.number_format`` из openpyxl. Не требует COM/Excel,
+    поэтому безопасен для параллельной обработки в ``ProcessPoolExecutor``.
+
+    Поддерживает основной кейс выгрузок 1С оборотов: числовые коды счетов
+    с буквенным суффиксом через формат ``0".Н"``, ``0".ФВ"`` и т.п.
+    """
+    val = getattr(cell, "value", cell)
+    # cell может быть передан как объект ячейки openpyxl или как кортеж (value, fmt)
+    fmt = None
+    if hasattr(cell, "number_format"):
+        fmt = cell.number_format
+    elif isinstance(cell, tuple) and len(cell) == 2:
+        val, fmt = cell
+
+    if val is None:
+        return ""
+    if not fmt or fmt == "General":
+        return str(val)
+
+    text_inserts = re.findall(r'"(.+?)"', str(fmt))
+    if text_inserts and isinstance(val, (int, float)) and not isinstance(val, bool):
+        try:
+            base = str(int(val)) if float(val).is_integer() else str(val)
+        except (ValueError, OverflowError):
+            base = str(val)
+        for ins in text_inserts:
+            base += ins
+        return base
+
+    return str(val)
