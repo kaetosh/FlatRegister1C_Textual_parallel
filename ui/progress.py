@@ -29,9 +29,10 @@
 from __future__ import annotations
 
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Container
 from textual.screen import ModalScreen
-from textual.widgets import Label, ProgressBar
+from textual.widgets import Label, ProgressBar, Static
 
 from ui.messages import ProgressUpdate
 
@@ -39,8 +40,11 @@ from ui.messages import ProgressUpdate
 class ProgressScreen(ModalScreen):
     """Модальный индикатор обработки."""
 
-    # пусто намеренно: экран не закрывается по Esc
-    BINDINGS: list = []
+    def __init__(self, cancel_event=None, **kwargs):
+        super().__init__(**kwargs)
+        self.cancel_event = cancel_event
+
+    BINDINGS = [Binding("escape", "cancel", "Отмена")]
 
     def compose(self) -> ComposeResult:
         yield Container(
@@ -51,8 +55,24 @@ class ProgressScreen(ModalScreen):
                 show_eta=False,
                 id="progress",
             ),
+            Static(
+                "Нажмите Esc для отмены обработки.",
+                classes="hint",
+                markup=False,
+                id="hint_cancel",
+            ),
+            Static(
+                "Не закрывайте окно программы во время обработки.",
+                classes="warning",
+                markup=False,
+                id="hint_close",
+            ),
             id="screen_progress_bar",
         )
+
+    def action_cancel(self) -> None:
+        if self.cancel_event is not None:
+            self.cancel_event.set()
 
     def on_progress_update(self, event: ProgressUpdate) -> None:
         bar = self.query_one("#progress", ProgressBar)

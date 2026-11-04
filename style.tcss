@@ -215,3 +215,19 @@ ContactsScreen {
         background: $surface;
     }
 }
+
+.hint {
+    text-align: center;
+    color: $text-muted;
+    text-style: italic;
+    height: auto;
+    padding: 0 1;
+}
+
+.warning {
+    text-align: center;
+    color: $error;
+    text-style: bold;
+    height: auto;
+    padding: 0 1;
+}

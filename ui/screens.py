@@ -5,6 +5,7 @@
 """
 
 import io
+import threading
 from functools import lru_cache
 from pathlib import Path
 
@@ -167,12 +168,18 @@ class RegisterScreen(Screen):
     def _start_processing(self, input_path: Path) -> None:
         app = self.app
         state: ProcessingState = app.processing_state
+        cancel_event = threading.Event()
 
         def _done(failure: FileFailure | None, failures, processed_count):
             # Вызывается из фонового потока — marshal'им в UI-поток,
             # иначе попадём на виджеты из чужого потока.
             def _done_ui() -> None:
                 state.discard()
+                if cancel_event.is_set():
+                    # Отмена: закрываем экраны без уведомлений и без сохранения.
+                    while len(app.screen_stack) > 1:
+                        app.pop_screen()
+                    return
                 if failure is not None:
                     self._show_error(failure)
                 else:
@@ -180,7 +187,7 @@ class RegisterScreen(Screen):
 
             app.call_from_thread(_done_ui)
 
-        progress_screen = ProgressScreen()
+        progress_screen = ProgressScreen(cancel_event=cancel_event)
         app.push_screen(progress_screen)
 
         # Сообщения прогресса публикуются в очередь самого ProgressScreen,
@@ -194,6 +201,7 @@ class RegisterScreen(Screen):
             register=app.register,
             adapter=adapter,
             on_done=_done,
+            cancel_event=cancel_event,
         )
         state.start(worker)
 

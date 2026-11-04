@@ -8,7 +8,6 @@ import concurrent.futures
 import contextlib
 import os
 import tempfile
-import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Type
@@ -68,7 +67,7 @@ class FileHandler:
         self.validator = ExcelValidator()
         self.processor_factory = FileProcessorFactory()
         self.result = ProcessingResult()
-        self.cancel_event: Optional[threading.Event] = None
+        self.cancel_event = None
 
     def _record_failure(self, file_name: str, failure: FileFailure) -> None:
         """Единственное место, где отказ файла попадает в отчёт и в журнал.
@@ -117,7 +116,8 @@ class FileHandler:
         input_path: Path,
         type_register: str,
         on_progress=None,
-        cancel_event: Optional[threading.Event] = None,
+        cancel_event=None,
+
     ) -> ProcessingResult:
         """Единственная публичная точка входа в обработку.
 
@@ -129,7 +129,6 @@ class FileHandler:
             input_path: Путь к файлу или папке.
             type_register: Ключ регистра из ``REGISTER_SPEC``.
             on_progress: Колбэк прогресса ``(current, total, stage_description)``.
-            cancel_event: Событие отмены — если установлено, обработка прерывается.
 
         Returns:
             :class:`ProcessingResult` с кадрами, проверками и отказами.
@@ -189,32 +188,42 @@ class FileHandler:
 
         # Проверка условия параллельной обработки
         if self.parallel and self.result.register_type != 'turnover':
-            self._process_directory_parallel(dir_path, progress_callback, result_collector)
+            self._process_directory_parallel(excel_files, progress_callback, result_collector)
         else:
             total_files = len(excel_files)
             for i, file_path in enumerate(excel_files):
-                # Проверка отмены перед каждым файлом
-                if self.cancel_event and self.cancel_event.is_set():
+                if self.cancel_event is not None and self.cancel_event.is_set():
                     break
                 processor_class, result, check = self._process_one(file_path, collect_failures=True)
                 if processor_class is not None:
                     result_collector.add_result(processor_class, result, check)
-                progress_callback(
-                    i + 1,
-                    total_files,
-                    stage_description=f"Обработано файлов {i + 1}/{total_files}"
-                )
-            progress_callback(0, 0, stage_description='Сохраняем и открываем итоговый файл')
+                if progress_callback:
+                    progress_callback(
+                        i + 1,
+                        total_files,
+                        stage_description=f"Обработано файлов {i + 1}/{total_files}"
+                    )
+            if self.cancel_event is not None and self.cancel_event.is_set():
+                return
+            if progress_callback:
+                progress_callback(0, 0, stage_description='Сохраняем и открываем итоговый файл')
             self._save_combined_results(result_collector)
 
-    def _process_directory_parallel(self, dir_path: Path, progress_callback, result_collector: ResultCollector):
-        excel_files = self._get_excel_files(dir_path)
+    def _process_directory_parallel(self, excel_files: List[Path], progress_callback, result_collector: ResultCollector):
         total_files = len(excel_files)
 
-        # Определяем количество воркеров (например, не больше числа CPU и не больше количества файлов)
-        max_workers = min(os.cpu_count() or 4, total_files)
+        # Определяем количество воркеров: не больше числа CPU/файлов и не
+        # больше разумного потолка (много одновременных Excel через xlwings
+        # нестабильно). Переопределяется через config/general_settings.
+        from flatregister.config import get_max_parallel_workers
 
-        futures: list = []
+        configured = get_max_parallel_workers()
+        auto = min(os.cpu_count() or 4, total_files, 4)
+        max_workers = min(configured if configured > 0 else auto, total_files)
+        if max_workers < 1:
+            max_workers = 1
+
+        completed: list = []
         with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
             future_to_file = {
                 executor.submit(_process_file_parallel, file_path, self.result.register_type): file_path
@@ -222,42 +231,51 @@ class FileHandler:
             }
 
             for i, future in enumerate(concurrent.futures.as_completed(future_to_file)):
-                # Проверка отмены перед обработкой результата
-                if self.cancel_event and self.cancel_event.is_set():
-                    # Отменяем все ещё не завершённые future
-                    for f in futures:
-                        f.cancel()
+                if self.cancel_event is not None and self.cancel_event.is_set():
+                    for f in future_to_file:
+                        if not f.done():
+                            f.cancel()
                     break
-                futures.append(future)
                 file_path = future_to_file[future]
                 try:
                     file_name, processor_class, result, check, failure = future.result()
-                    if failure is not None:
-                        self._record_failure(file_name, failure)
-                    else:
-                        result_collector.add_result(processor_class, result, check)
-                        self.result.processed_count += 1
+                    completed.append((file_name, processor_class, result, check, failure))
                 except Exception as error:
                     # Сюда попадает только падение самого ProcessPoolExecutor
                     # (процесс убит, нет свободной памяти) — не отказ файла.
-                    self._record_failure(
-                        file_path.name,
+                    completed.append((
+                        file_path.name, None, None, None,
                         describe_exception(error, file_name=file_path.name),
-                    )
+                    ))
                 finally:
-                    progress_callback(
-                        i + 1,
-                        total_files,
-                        stage_description=f"Обработано файлов {i + 1}/{total_files}"
-                    )
+                    if progress_callback:
+                        progress_callback(
+                            i + 1,
+                            total_files,
+                            stage_description=f"Обработано файлов {i + 1}/{total_files}"
+                        )
 
-        progress_callback(0, 0, stage_description='Сохраняем и открываем итоговый файл')
+        if self.cancel_event is not None and self.cancel_event.is_set():
+            return
+
+        # Собираем результаты в детерминированном порядке (по имени файла),
+        # чтобы итоговый отчёт не зависел от порядка завершения future.
+        completed.sort(key=lambda item: item[0])
+        for file_name, processor_class, result, check, failure in completed:
+            if failure is not None:
+                self._record_failure(file_name, failure)
+            else:
+                result_collector.add_result(processor_class, result, check)
+                self.result.processed_count += 1
+
+        if progress_callback:
+            progress_callback(0, 0, stage_description='Сохраняем и открываем итоговый файл')
         self._save_combined_results(result_collector)
 
     @staticmethod
     def _get_excel_files(dir_path: Path) -> List[Path]:
         """Получить список Excel файлов в директории"""
-        files = list(dir_path.glob("*.xlsx"))
+        files = sorted(dir_path.glob("*.xlsx"), key=lambda p: p.name)
         if not files:
             raise NoInputFilesError(
                 "В папке нет файлов Excel (.xlsx).",
@@ -334,13 +352,14 @@ class FileHandler:
             for sheet_name, df in self.result.files.items():
                 safe_name = sanitize_sheet_name(sheet_name)
                 df = df.map(lambda x: x.rstrip() if isinstance(x, str) else x)
-                df.to_excel(writer, sheet_name=safe_name, index=False)
+                write_df_in_chunks(writer, df, safe_name)
 
             # Данные проверки
             for sheet_name, df in self.result.checks.items():
                 safe_name = sanitize_sheet_name(f"Проверка_{sheet_name}")
                 if not df.empty:
-                    df.to_excel(writer, sheet_name=safe_name, index=False)
+                    df = df.map(lambda x: x.rstrip() if isinstance(x, str) else x)
+                    write_df_in_chunks(writer, df, safe_name)
 
         with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp:
             temp_filename = tmp.name

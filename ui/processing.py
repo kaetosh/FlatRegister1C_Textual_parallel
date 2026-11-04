@@ -41,14 +41,14 @@ class ProcessingState:
 
 
 def _processing_thread_body(
-    input_path: Path, register: str, adapter: ProgressAdapter, on_done
+    input_path: Path, register: str, adapter: ProgressAdapter, on_done, cancel_event=None
 ) -> None:
     """Тело рабочего потока. В UI-поток возвращается только через ``on_done``."""
     file_handler = FileHandler(parallel=get_parallel_processing_option())
     try:
         # Единственный публичный вход в ядро: process() сам решает «файл/папка»,
         # сам валидирует путь и сам сохраняет результат.
-        file_handler.process(input_path, register, on_progress=adapter)
+        file_handler.process(input_path, register, on_progress=adapter, cancel_event=cancel_event)
 
         failures = dict(file_handler.result.failures)
         processed_count = file_handler.result.processed_count
@@ -60,7 +60,7 @@ def _processing_thread_body(
             error, file_name=getattr(input_path, "name", "")
         )
         log_failure(failure, logger=_log)
-        on_done(failure, {}, 0)
+        on_done(failure, dict(file_handler.result.failures), 0)
 
 
 def run_processing(
@@ -70,6 +70,7 @@ def run_processing(
     register: str,
     adapter: ProgressAdapter,
     on_done,
+    cancel_event=None,
 ) -> Worker:
     """Запустить обработку в фоновом потоке и вернуть воркер.
 
@@ -80,7 +81,7 @@ def run_processing(
 
     async def _worker_body() -> None:
         await asyncio.to_thread(
-            _processing_thread_body, input_path, register, adapter, on_done
+            _processing_thread_body, input_path, register, adapter, on_done, cancel_event
         )
 
     worker = app.run_worker(
