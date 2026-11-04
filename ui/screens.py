@@ -253,7 +253,7 @@ class SettingsScreen(ModalScreen):
             general_header_value = bool(general_options.get("parallel_processing", 0))
             yield Container(
                 Horizontal(
-                    Static("Параллельная обработка в пакетном режиме¹:", classes="statics-settings-modal"),
+                    Static("Параллельная обработка в пакетном режиме:", classes="statics-settings-modal"),
                     Switch(value=general_header_value, id="switch-general-header", classes="switchs-settings-modal"),
                     id="horizontal-general-header-settings-modal",
                 ),
@@ -392,7 +392,7 @@ class SettingsScreenRegister(ModalScreen):
             general_header_value = bool(general_options.get("parallel_processing", 0))
             yield Container(
                 Horizontal(
-                    Static("Параллельная обработка в пакетном режиме¹:", classes="statics-settings-modal"),
+                    Static("Параллельная обработка в пакетном режиме:", classes="statics-settings-modal"),
                     Switch(value=general_header_value, id="switch-general-header", classes="switchs-settings-modal"),
                     id="horizontal-general-header-settings-modal",
                 ),
