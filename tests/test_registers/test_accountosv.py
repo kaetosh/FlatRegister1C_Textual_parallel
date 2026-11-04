@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import pandas as pd
 import pytest
 
 from flatregister.registers.account_osv import AccountOSV_NonUPPFileProcessor, AccountOSV_UPPFileProcessor
@@ -59,8 +60,6 @@ def test_осв_счёта_упп_берёт_номер_счёта_из_заго
     Он нужен для выгрузок, где счёт в разбивке не написан: тогда единственный
     источник номера — заголовок отчёта.
     """
-    import pandas as pd
-
     from flatregister.registers.account_osv import find_account_from_text
 
     frame = pd.DataFrame({"a": ["Оборотно-сальдовая ведомость по счету 60.01"], "b": [1]})
@@ -104,3 +103,59 @@ def test_осв_счёта_колонки_денежные_переименов�
         assert column in result.columns, sorted(result.columns)
     # Служебная колонка предобработки наружу не уходит
     assert "Уровень" not in result.columns
+
+
+def test_вид_связи_переносится_на_самые_глубокие_строки(accountosv_upp_view_link_file):
+    """Порядок субконто не влияет: контрагент выше договоров — не беда.
+
+    В выгрузке вид связи и даты стоят в строке контрагента, а в итог идут
+    только строки самого глубокого уровня (договоры). Значения обязаны
+    переехать вниз, иначе они теряются вместе с отброшенной строкой.
+    """
+    result, check = AccountOSV_UPPFileProcessor().process_file(
+        accountosv_upp_view_link_file)
+
+    assert set(result["Субконто"]) == {"Договор 1", "Договор 2"}
+
+    by_contract = result.set_index("Субконто")
+    assert by_contract.at["Договор 1", "Вид связи КА за период"] == "ГСК"
+    assert by_contract.at["Договор 1", "Начало периода  для вида связи"] == "01.01.2025"
+    assert by_contract.at["Договор 1", "Конец  периода для вида связи"] == "31.12.2025"
+    assert (by_contract.at["Договор 2", "Вид связи КА за период"]
+            == "Прочие ГАП Не связанные стороны")
+    assert by_contract.at["Договор 2", "Начало периода  для вида связи"] == "01.01.2025"
+    assert by_contract.at["Договор 2", "Конец  периода для вида связи"] == "30.06.2025"
+
+    # Перенос значений не должен сдвинуть ни строки, ни обороты.
+    row = check.iloc[0]
+    assert row["Сальдо_начало_разница"] == 0, row.to_dict()
+    assert row["Оборот_разница"] == 0, row.to_dict()
+    assert row["Сальдо_конец_разница"] == 0, row.to_dict()
+
+
+def test_заполнение_не_перетекает_через_итого():
+    """Значение не уходит к следующему контрагенту: его закрывает «Итого»."""
+    frame = pd.DataFrame({
+        "Субконто": ["Контрагент 1", "Договор 1", "Итого Контрагент 1",
+                     "Контрагент 2", "Договор 2", "Итого"],
+        "Вид связи КА за период": ["ГСК", None, None, None, None, None],
+    })
+
+    filled = AccountOSV_UPPFileProcessor()._fill_until_itogo(
+        frame, "Вид связи КА за период", "Субконто")
+
+    values = list(filled["Вид связи КА за период"])
+    # Блок контрагента 1 вместе с закрывающей его строкой «Итого» получает
+    # значение. Следующий блок начинается уже после неё — там пусто.
+    assert values[:3] == ["ГСК", "ГСК", "ГСК"]
+    assert all(pd.isna(value) for value in values[3:])
+
+
+def test_заполнение_без_нужных_колонок_ничего_не_меняет():
+    """Нет колонки вида связи — метод обязан вернуть кадр как есть."""
+    frame = pd.DataFrame({"Субконто": ["Контрагент 1", "Договор 1"]})
+
+    filled = AccountOSV_UPPFileProcessor()._fill_until_itogo(
+        frame, "Вид связи КА за период", "Субконто")
+
+    pd.testing.assert_frame_equal(filled, frame)

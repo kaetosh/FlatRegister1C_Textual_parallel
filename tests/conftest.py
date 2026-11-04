@@ -78,6 +78,12 @@ def accountosv_non_upp_file(out_dir):
 
 
 @pytest.fixture
+def accountosv_upp_view_link_file(out_dir):
+    """ОСВ счёта с видом связи, где контрагент выше самого глубокого уровня."""
+    return factories.accountosv_upp_view_link(out_dir / "ОСВ счета вид связи.xlsx")
+
+
+@pytest.fixture
 def accountosv_upp_processed(accountosv_upp_file):
     """Готовый результат УПП-ОСВ — чтобы не прогонять обработку ради колонок."""
     from flatregister.registers.account_osv import AccountOSV_UPPFileProcessor

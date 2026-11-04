@@ -14,7 +14,7 @@
 * **Сборка в .exe:** Nuitka лежит в группе `build` (`uv run --group build nuitka ...`):
   `nuitka --standalone --include-data-file="style.tcss=style.tcss" --include-package=flatregister --include-package=ui --include-package=rich --include-package=rich._unicode_data main.py`
   Обязателен `--include-data-file` для `style.tcss` (он остаётся в корне). `config.json` при сборке не нужен: он создаётся при первом запуске рядом с `.exe` (или в `%APPDATA%`), там же ищется. `text.py` — обычный Python-модуль, подхватывается импортом.
-* **Тесты и регрессия — есть.** См. «Проверка» ниже: `uv run pytest` (111 passed) и `tools/regress.py` с эталонами `tools/baseline_gaz.json` / `tools/baseline_mez.json`.
+* **Тесты и регрессия — есть.** См. «Проверка» ниже: `uv run pytest` (114 passed) и `tools/regress.py` с эталонами `tools/baseline_gaz.json` / `tools/baseline_mez.json`.
 
 ## Поток обработки
 1. `FlatRegister1CApp.compose` — `Select(select_options())` из единого реестра (`ui/app.py:69-73`, `flatregister/registry.py:283-286`).
@@ -153,6 +153,7 @@
 6. **`exclude_values`** (`registers/base.py:33-45`) — строки-маркеры промежуточных итогов, которые удаляются, чтобы исключить двойной счёт. Список в коде, не в конфиге: расширять аккуратно, две позиции уже закомментированы.
 7. **Тесты заглушают xlwings** (`tests/conftest.py:216-233`): фикстуры оборотов по определению задевают COM, иначе десятки прогонов подряд роняют Excel с `0x800706ba`. Настоящая ветка xlwings непокрыта — нужен маркер `requires_excel` и живая машина.
 8. **Пробелы убираются на выходе**, не в процессорах (`df.map(...rstrip...)` перед записью).
+9. **Вид связи в ОСВ по счёту дозаполняется вниз до «Итого»** (`_fill_until_itogo`, `registers/account_osv.py:317`). В выгрузке 1С «Вид связи КА за период» и периоды его действия (`VIEW_LINK_COLUMNS`, `account_osv.py:144`) стоят в одной строке с контрагентом, а в итог идут только строки самого глубокого уровня. Если контрагент не самый глубокий (счёт → контрагент → договор), его строка уходит как промежуточный итог и значения теряются. `_fill_view_link_columns` вызывается **до** `_remove_duplicate_rows` в обоих `process_file` (`account_osv.py:496` — `itogo_col='Субконто'`, `account_osv.py:687` — `'Счет'`); ffill ограничен блоком между строками «Итого», поэтому значение не протекает к следующему контрагенту. Метод не удалять: без него результат зависит от порядка субконто в выгрузке.
 
 ## Правила для ИИ-агента
 * Не хардкодь порядок колонок — только `REGISTER_SPEC[...].column_order`. Новый вид колонок → в `COLUMN_PREFIXES`, а эталонный порядок — в реестр.
@@ -165,7 +166,7 @@
 
 ## Проверка (тесты и регрессия)
 ```powershell
-uv run pytest                      # ожидается 111 passed
+uv run pytest                      # ожидается 114 passed
 uv run ruff check .                # ожидается 0 замечаний
 
 # регрессия: сначала прогон, потом сравнение с эталоном (код возврата 1 = регрессия)

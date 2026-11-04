@@ -232,6 +232,73 @@ def accountosv_non_upp(path: Path, *, rows=None) -> Path:
                        row_header="Наименование", turnover_header="Обороты за период")
 
 
+#: Одна строка ОСВ счёта с видом связи.
+#:
+#: (субконто, уровень, вид связи, начало периода, конец периода,
+#:  сальдо на начало Дт, сальдо на конец Дт, оборот Дт, оборот Кт)
+#:
+#: Вид связи и даты стоят в строке КОНТРАГЕНТА — как в выгрузке 1С. Здесь
+#: контрагент не самый глубокий уровень (под ним договоры), поэтому без
+#: переноса значений вниз (`_fill_until_itogo`) они потерялись бы вместе с
+#: отброшенной строкой контрагента.
+_ViewLinkRow = tuple[str, int, str | None, str | None, str | None,
+                     int, int, int, int]
+
+_DEFAULT_VIEW_LINK_ROWS: list[_ViewLinkRow] = [
+    ("60.01", 1, None, None, None, 1_000, 2_000, 5_000, 4_000),
+    ("Контрагент 1", 2, "ГСК", "01.01.2025", "31.12.2025", 600, 1_200, 3_000, 2_000),
+    ("Договор 1", 3, None, None, None, 600, 1_200, 3_000, 2_000),
+    ("Итого Контрагент 1", 2, None, None, None, 600, 1_200, 3_000, 2_000),
+    ("Контрагент 2", 2, "Прочие ГАП Не связанные стороны", "01.01.2025",
+     "30.06.2025", 400, 800, 2_000, 2_000),
+    ("Договор 2", 3, None, None, None, 400, 800, 2_000, 2_000),
+    ("Итого Контрагент 2", 2, None, None, None, 400, 800, 2_000, 2_000),
+]
+
+
+def accountosv_upp_view_link(path: Path, *,
+                             rows: Sequence[_ViewLinkRow] | None = None) -> Path:
+    """ОСВ счёта УПП с «Вид связи КА за период» и периодами его действия.
+
+    Иерархия: счёт → контрагент → договор, плюс строка «Итого контрагента».
+    Контрагент здесь выше самого глубокого уровня — именно тот случай, когда
+    значения, стоящие в его строке, теряются без дозаполнения вниз.
+    """
+    rows = list(rows or _DEFAULT_VIEW_LINK_ROWS)
+    builder = SheetBuilder()
+    builder.add("Оборотно-сальдовая ведомость по счету 60.01")
+    builder.add("Период: 01.01.2025 - 31.12.2025")
+    builder.add(GROUP_MARK, GROUP_MARK, "Субконто", "Наименование",
+                "Вид связи КА за период",
+                "Начало периода  для вида связи",
+                "Конец  периода для вида связи",
+                "Сальдо на начало периода", None,
+                "Сальдо на конец периода", None,
+                "Оборот за период", None)
+    builder.add(GROUP_MARK, GROUP_MARK, None, "Наименование",
+                None, None, None,
+                "Дебет", "Кредит", "Дебет", "Кредит", "Дебет", "Кредит")
+
+    for (subkonto, level, view_link, start, end,
+         saldo_start, saldo_end, debit_turnover, credit_turnover) in rows:
+        builder.add(GROUP_MARK, GROUP_MARK, subkonto, "",
+                    view_link, start, end,
+                    saldo_start, 0, saldo_end, 0, debit_turnover, credit_turnover,
+                    level=level)
+
+    # «Итого» — по листьям, как и в _accountosv: родительские строки при
+    # обработке отбрасываются, и сверка иначе покажет ложную разницу.
+    deepest = max(level for _, level, *_ in rows)
+    totals = [0, 0, 0, 0, 0, 0]
+    for row in rows:
+        if row[1] != deepest:
+            continue
+        for position, value in enumerate([row[5], 0, row[6], 0, row[7], row[8]]):
+            totals[position] += value
+    builder.add(GROUP_MARK, GROUP_MARK, "Итого", "", None, None, None, *totals, level=1)
+    return builder.save(path)
+
+
 # --------------------------------------------------------------------------
 # Обороты счёта (turnover)
 # --------------------------------------------------------------------------
