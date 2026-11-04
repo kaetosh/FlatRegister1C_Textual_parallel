@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Пайплайн целиком: папка, параллельность, автоопределение регистра.
 
 Эти проверки закрывают то, что юнит-тесты процессоров не видят: разница между
@@ -129,7 +128,7 @@ def test_папка_из_двух_файлов_склеивается(out_dir, c
     factories.accountosv_upp(out_dir / "ООО Вектор.xlsx")
 
     handler = FileHandler()
-    handler.handle_input(out_dir, "accountosv", _progress)
+    handler.process(out_dir, "accountosv", _progress)
 
     assert not handler.result.failures, handler.result.failures
     assert handler.result.processed_count == 2
@@ -147,7 +146,7 @@ def test_плохой_файл_не_останавливает_папку(out_di
     (out_dir / "мусор.xlsx").write_bytes(b"not a zip archive")
 
     handler = FileHandler()
-    handler.handle_input(out_dir, "accountosv", _progress)
+    handler.process(out_dir, "accountosv", _progress)
 
     assert set(handler.result.failures) == {"мусор.xlsx"}
     assert handler.result.processed_count == 1
@@ -243,7 +242,7 @@ def test_последовательный_и_параллельный_режим
         monkeypatch.setattr(FileHandler, "_open_file", staticmethod(lambda *a, **k: None))
 
         handler = FileHandler(parallel=parallel)
-        handler.handle_input(out_dir, "accountosv", _progress)
+        handler.process(out_dir, "accountosv", _progress)
         assert not handler.result.failures, handler.result.failures
         return box["results"], handler.result.processed_count
 
@@ -273,7 +272,7 @@ def test_пустая_папка_даёт_понятную_ошибку(tmp_path
 
     handler = FileHandler()
     with pytest.raises(Exception) as caught:
-        handler.handle_input(empty, "card", _progress)
+        handler.process(empty, "card", _progress)
 
     assert ".xlsx" in caught.value.user_message
 
@@ -285,7 +284,7 @@ def test_одиночный_файл_кладётся_в_результат(out_
     monkeypatch.setattr(FileHandler, "_open_file", staticmethod(lambda *a, **k: None))
 
     handler = FileHandler()
-    handler.handle_input(path, "card", _progress)
+    handler.process(path, "card", _progress)
 
     assert not handler.result.failures
     assert set(handler.result.files) == {"Карточка.xlsx"}
@@ -298,7 +297,7 @@ def test_отказ_в_одиночном_режиме_пробрасывает�
 
     handler = FileHandler()
     with pytest.raises(Exception) as caught:
-        handler.handle_input(path, "card", _progress)
+        handler.process(path, "card", _progress)
 
     assert "регистр" in caught.value.user_message.lower()
 
@@ -312,8 +311,7 @@ def test_одиночный_режим_санитизирует_имя_лист�
     monkeypatch.setattr(FileHandler, "_open_file", staticmethod(lambda p: opened.setdefault("path", p)))
 
     handler = FileHandler()
-    handler.handle_input(path, "card", _progress)
-    handler._save_and_open_batch_result(_progress)
+    handler.process(path, "card", _progress)
 
     temp_path = opened["path"]
     try:

@@ -14,15 +14,14 @@
 * **Сборка в .exe:** Nuitka лежит в группе `build` (`uv run --group build nuitka ...`):
   `nuitka --standalone --include-data-file="style.tcss=style.tcss" --include-package=flatregister --include-package=ui --include-package=rich --include-package=rich._unicode_data main.py`
   Обязателен `--include-data-file` для `style.tcss` (он остаётся в корне). `config.json` при сборке не нужен: он создаётся при первом запуске рядом с `.exe` (или в `%APPDATA%`), там же ищется. `text.py` — обычный Python-модуль, подхватывается импортом.
-* **Тесты и регрессия — есть.** См. «Проверка» ниже: `uv run pytest` (114 passed) и `tools/regress.py` с эталонами `tools/baseline_gaz.json` / `tools/baseline_mez.json`.
+* **Тесты и регрессия — есть.** См. «Проверка» ниже: `uv run pytest` (119 passed) и `tools/regress.py` с эталонами `tools/baseline_gaz.json` / `tools/baseline_mez.json`.
 
 ## Поток обработки
-1. `FlatRegister1CApp.compose` — `Select(select_options())` из единого реестра (`ui/app.py:69-73`, `flatregister/registry.py:283-286`).
-2. Кнопка «Продолжить» → `register` + текст требований `entry.requirements` → `RegisterScreen` (`ui/app.py:103-115`).
-3. `RegisterScreen`: путь вводится перетаскиванием в `Input#path_register`, валидатор — `is_valid_dragged_path`; Enter → `on_input_submitted` (`ui/screens.py:202-222`).
-4. Прогресс-экран: **файл** → `LoaderIndicatorCustom`, **папка** → `ProgressBarCustom` (`ui/screens.py:213-217`).
-5. `@work(thread=True) process_file` (`ui/screens.py:224-253`) → `FileHandler(parallel=get_parallel_processing_option()).handle_input(path, register, progress_callback=progress_screen.update_progress)`.
-6. Возврат в UI-поток — **только** через `self.app.call_from_thread(...)` (`ui/screens.py:244,253`). Из `@work(thread=True)` нельзя трогать виджеты напрямую. Перед возвратом `file_handler.result.clear()` — чтобы фоновый поток не держал кадры в памяти.
+1. `MenuScreen` (default-экран через `App.get_default_screen()`, `ui/screens.py`): `Select(select_options())` из единого реестра → кнопка «Продолжить» → `register` + текст требований `entry.requirements` → `RegisterScreen` (`ui/screens.py`).
+2. `RegisterScreen`: путь вводится перетаскиванием в `Input#path_register`, валидатор — `is_valid_dragged_path`; Enter → `on_input_submitted` → `_start_processing` (`ui/screens.py:227-251`).
+3. `_start_processing` создаёт `ProgressScreen` и вызывает `ui/processing.py:run_processing()` — воркер стартует из UI-потока через `app.run_worker(..., group="processing", exclusive=True)`, прогресс через `ProgressAdapter` → `App.post_message` (потокобезопасно).
+4. `FileHandler.process(input_path, register, on_progress=adapter)` (`flatregister/pipeline/handler.py`) — единственная публичная точка входа: сам валидирует путь через `validate_paths`, сам решает «файл/папка», сам сохраняет и открывает результат.
+5. Возврат в UI-поток — через колбэк `on_done(failure, failures, processed_count)` в `_processing_thread_body` (`ui/processing.py:43-63`). На экране `_show_success` / `_show_error`. Цикл `while len(screen_stack) > 1: pop_screen()` возвращает на `RegisterScreen`.
 
 ## Реестр регистров (единая точка регистрации)
 `flatregister/registry.py:73-267` — `REGISTER_SPEC: Dict[str, RegisterEntry]`. Это **единственное** место, где регистр описан снаружи процессоров: до S8 он был прописан в `Select`, `REGISTER_PATTERNS`, `DESIRED_ORDER` и `text.REQUIREMENTS`.
@@ -65,7 +64,7 @@
 * `write_df_in_chunks` (`flatregister/excel_io.py:49-70`) режет кадр по 1 000 000 строк; при нескольких частях к имени листа добавляется `1`, `2`, … Каждое имя проходит `sanitize_sheet_name`.
 * Перед записью везде выполняется `df.map(lambda x: x.rstrip() if isinstance(x, str) else x)` — хвостовые пробелы убираются **на выходе**, не в процессорах.
 * Режим **одного файла** идёт отдельно: `_save_and_open_batch_result` (`handler.py:257-281`) делает лист на каждый файл, имя листа = имя файла, прогнанное через `sanitize_sheet_name` (`[]:*?/\` → `_`, пустое → `Лист`, обрезка до 31).
-* Неудачные файлы → `ProcessingResult.failures` → `generate_failed_processing_markdown` (`excel_io.py:213-246`) → экран `ResultProcessingDirectotyScreen` (`ui/screens.py:44-63`).
+* Неудачные файлы → `ProcessingResult.failures` → `generate_failed_processing_markdown` (`excel_io.py:213-246`) → экран `ResultProcessingDirectoryScreen` (`ui/screens.py:45-65`).
 
 ## Чтение выгрузок 1С — самая хрупкая часть
 1. **`fix_1c_excel_case`** (`excel_io.py:112-142`): перепаковывает xlsx, переименовывая `xl/SharedStrings.xml` → `xl/sharedStrings.xml`. Причина: 1С пишет имя с большой буквы, openpyxl ждёт lowercase, иначе файл не читается. Возвращает `BytesIO`, не путь; ошибки → `SheetUnreadableError` (файл открыт в Excel / повреждён).
@@ -119,8 +118,8 @@
 ⚠️ Глобальный кэш `_config_cache` (модульная переменная) — для тестов зови `clear_config_cache()`.
 
 ## Пути, которые приходят из 1С
-* `is_valid_dragged_path` (`excel_io.py:182-211`) — снимает кавычки, `/` → `\`.
-* `normalize_path` (`excel_io.py:162-179`) + `generate_dash_combinations` (`excel_io.py:145-160`) — перебирают **все комбинации** замены дефисов `-` ↔ `—` в пути. Для пути с N дефисами это 2^N вариантов: длинные пути с несколькими дефисами дают взрыв. Имей в виду при отладке «путь не находится».
+* `is_valid_dragged_path` (`excel_io.py:182-211`) — дешёвая проверка `os.path.exists` в валидаторе `Input` (вызывается на каждое нажатие клавиши — перебор тире **не** допустим здесь).
+* `normalize_path` / `generate_dash_combinations` (`excel_io.py:145-179`) — оживают в `FileHandler.process()` (S11) как единая воронка; при >~10 тире перебор ограничивается однородными заменами.
 * `validate_paths` (`excel_io.py:72-109`) — собирает все битые пути и бросает `InputPathError` одним сообщением.
 
 ## Исключения и журнал
@@ -161,6 +160,7 @@
 * **Парность УПП/не-УПП** — держи имена `*_UPPFileProcessor` / `*_NonUPPFileProcessor` и указывай обоих в `patterns`. `ResultCollector` раскладывает по `kind`/`variant_for`, а фабрика сравнивает классы по идентичности: рассинхрон молча уедет в `non_upp_results`.
 * Порядок этапов внутри регистра задаёт сам процессор (`FileProcessor.process_file`), `handler.py` только склеивает.
 * Порядок воркеров в `ProcessPoolExecutor` **не сохраняется** — не полагайся на него при сортировке, сортируй явно.
+* **Отмена обработки:** кнопка «Отмена» на `ProgressScreen` устанавливает `threading.Event`, который проверяется в `_process_directory` и `_process_directory_parallel`. При отмене обработка прерывается, экран закрывается без уведомления. Не закрывай окно во время обработки — COM-Excel / `ProcessPoolExecutor` могут остаться.
 * Из `@work(thread=True)` — только через `app.call_from_thread`.
 * Правки в логике проверяй **на реальной выгрузке 1С** через `tools/regress.py --assert-no-regression` и сверяй с эталоном. Тестов и эталонов уже достаточно, но числа важнее зелёной галочки.
 

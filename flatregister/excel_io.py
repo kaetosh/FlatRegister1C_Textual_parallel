@@ -143,21 +143,40 @@ def fix_1c_excel_case(file_path: Path) -> BytesIO:
 
 
 def generate_dash_combinations(path_str: str) -> List[str]:
-    """Генерирует все комбинации тире в строке."""
+    """Генерирует комбинации тире в строке.
+
+    При числе тире <= MAX_DASH_COMBINATIONS — все возможные замены (2^N).
+    При большем числе — только однородные замены (все '-'->'—' или все '—'->'-'),
+    чтобы избежать взрыва комбинаторики на длинных путях с множеством тире.
+    """
+    MAX_DASH_COMBINATIONS = 10
+
     # Находим индексы тире
     dash_indices = [i for i, char in enumerate(path_str) if char in ('-', '—')]
-    
+
     if not dash_indices:
         return [path_str]  # Если нет тире, возвращаем оригинальную строку
 
-    # Генерируем все комбинации замены
-    combinations = []
-    for combo in product(*[(path_str[i:i+1].replace('-', '—'), path_str[i:i+1].replace('—', '-')) 
-                         if i in dash_indices else (path_str[i:i+1],) 
-                         for i in range(len(path_str))]):
-        combinations.append(''.join(combo))
-    
-    return combinations
+    if len(dash_indices) <= MAX_DASH_COMBINATIONS:
+        # Полный перебор всех комбинаций замены
+        combinations = []
+        for combo in product(*[(path_str[i:i + 1].replace('-', '—'), path_str[i:i + 1].replace('—', '-'))
+                               if i in dash_indices else (path_str[i:i + 1],)
+                               for i in range(len(path_str))]):
+            combinations.append(''.join(combo))
+        return combinations
+
+    # Однородные замены: все '-' -> '—' или все '—' -> '-'
+    all_to_em_dash = path_str.replace('-', '—')
+    all_to_hyphen = path_str.replace('—', '-')
+
+    result = [path_str]
+    if all_to_em_dash != path_str:
+        result.append(all_to_em_dash)
+    if all_to_hyphen != path_str and all_to_hyphen != all_to_em_dash:
+        result.append(all_to_hyphen)
+
+    return result
 
 def normalize_path(original_path: Path) -> Optional[Path]:
     """Находит валидный путь, перебирая комбинации тире."""

@@ -4,16 +4,9 @@ Screen {
     height: 100%;
 }
 
-.scrollable-content {
-    height: 1fr;  /* Занимает всю доступную высоту */
-    overflow-y: auto;  /* Включаем вертикальную прокрутку */
-}
-
 .bottom-bar {
-    height: auto;  /* Высота по содержимому */
-    min-height: 3;  /* Минимальная высота в строках, чтобы не сжимался слишком сильно */
-    /* background: $surface;  Фон, чтобы отделить от контента (опционально) */
-    /* border-top: solid $primary;  Разделитель (опционально) */
+    height: auto;
+    min-height: 3;
 }
 
 
@@ -21,11 +14,11 @@ Screen {
    /* column-span: 2;*/
 
     border: solid #0087d7;
-    height: 1fr;  /* Занимает всю доступную высоту */
-    overflow-y: auto;  /* Включаем вертикальную прокрутку */
+    height: 1fr;
+    overflow-y: auto;
 }
 
-Select {
+#select_register {
     width: 60%;
 }
 
@@ -41,8 +34,9 @@ Select {
     align: left middle;
 }
 
-#scroll_input {
+#register_requirements {
     height: 1fr;
+    overflow-y: auto;
 }
 
 #horizontal_input {
@@ -55,8 +49,8 @@ Select {
 }
 
 #result_processing {
-    height: 1fr;  /* Занимает всю доступную высоту */
-    overflow-y: auto;  /* Включаем вертикальную прокрутку */
+    height: 1fr;
+    overflow-y: auto;
 }
 
 #failed_files_log_hint {
@@ -66,41 +60,22 @@ Select {
     border-top: solid $panel;
 }
 
-#screen_loader_indicator {
+#screen_progress_bar {
     align: center middle;
     height: 25%;
     width: 50%;
     border: round orange;
 }
 
-#screen_progress_bar {
-    align: center middle;
-    height: 25%;
-    width: 50%;
-    border: round orange;
-    }
-    
 #label_progress {
     text-align: center;
     width: 100%;
     height: 75%;
 }
 
-#label_loader {
-    text-align: center;
-    width: 100%;
-    height: 50%;
-}
-    
 ProgressBar {
     align: center middle;
     width: 100%;
-}
-
-LoadingIndicator {
-    text-align: center;
-    width: 100%;
-    height: 25%;
 }
 
 SettingsScreenRegister {
@@ -123,8 +98,8 @@ SettingsScreenRegister {
 
         #scrollable-selection-list {
             overflow-y: auto;
-            height: 1fr;  /* Занимает всю доступную высоту */
-            overflow-y: auto;  /* Включаем вертикальную прокрутку */
+            height: 1fr;
+            overflow-y: auto;
         }
 
         #selection-list-settings-modal {
@@ -145,10 +120,11 @@ SettingsScreenRegister {
         .buttons-settings-modal {
             margin: 0 1;
         }
-        Button {
+        #button-save-settings-modal,
+        #button-cancel-settings-modal {
             width: 45%;
         }
-        
+
 SettingsScreen {
         align: center middle;
     }
@@ -163,7 +139,7 @@ SettingsScreen {
        .statics-settings-modal {
           content-align: left middle;
           height: 3;
-          width: 80%; 
+          width: 80%;
        }
        .switchs-settings-modal {
            content-align: right middle;
@@ -176,6 +152,66 @@ SettingsScreen {
        #horizontals-button-settings-modal{
            align: center bottom;
            }
-       #button-settings-modal {
+       #button-settings-modal,
+       #button-settings-cancel-modal {
             width: 45%;
-                    }
+        }
+
+ContactsScreen {
+    background: $surface;
+
+    #info_text {
+        text-align: center;
+        margin: 1 1;
+        padding: 1;
+        width: 100%;
+    }
+
+    .flex-row {
+        layout: horizontal;
+        align: center middle;
+        margin: 1 1;
+        padding: 1;
+        height: auto;
+        width: 100%;
+    }
+
+    .selector-container {
+        width: 30%;
+        align: center middle;
+        padding: 0;
+    }
+
+    .selector-label {
+        text-align: center;
+        text-style: bold;
+        margin-bottom: 1;
+    }
+
+    #messenger_selector {
+        width: 100%;
+        margin: 0;
+    }
+
+    .qr-container {
+        width: 65%;
+        align: center middle;
+        padding: 0;
+        border-title-align: center;
+    }
+
+    .qr-label {
+        text-align: center;
+        text-style: bold;
+        margin-bottom: 1;
+    }
+
+    #qr_code {
+        text-align: center;
+        margin: 0;
+        padding: 1;
+        width: 100%;
+        height: auto;
+        background: $surface;
+    }
+}

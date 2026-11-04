@@ -67,14 +67,14 @@ uv run pytest                 # ожидается 111 passed
 
 ## Статус
 
-- **Текущая сессия:** S9 — закрыта. Все сессии плана закрыты.
+- **Текущая сессия:** S11 — закрыта.
 - **Ветка:** `refactor/s0-safety-net`
 - **Baseline: СНЯТ** на 178 реальных выгрузках, два набора:
   - `tools/baseline_gaz.json` — 112 файлов, все шесть регистров, 117 с
   - `tools/baseline_mez.json` — 66 файлов, ОСВ счёта / анализ / общая ОСВ, 73 с
   Имена файлов в них обезличены хешем: названия организаций и номера счетов
   в репозиторий не попадают.
-- **Тесты:** `uv run pytest` → **111 passed**, ~12 с
+- **Тесты:** `uv run pytest` → **119 passed**, ~14 с (114 до S10 + 5 UI-тестов).
 - **Окружение:** `.venv` на Python 3.12.0, зависимости из `pyproject.toml`
 - **Линтер:** `uv run ruff check .` — **0 замечаний** (было 2, оба закрыты в S4)
 - **Дымовые проверки:** `tools/smoke_errors.py` и `tools/smoke_ui.py` — зелёные
@@ -142,6 +142,8 @@ uv run python tools\regress.py --assert-no-regression tools\baseline_mez.json to
 | S7 | УПП / не-УПП | **закрыта** |
 | S8 | Пайплайн и конфиг | **закрыта** |
 | S9 | Документация и финал | **закрыта** |
+| S10 | Гигиена UI (Textual) | **закрыта** |
+| S11 | Структура UI и API ядра | **закрыта** |
 
 ### S0 — Каркас и журнал
 
@@ -318,9 +320,85 @@ uv run python tools\regress.py --assert-no-regression tools\baseline_mez.json to
 
 **Критерий готовности:** выполнен — все сессии закрыты, документация отражает S8.
 
----
+### S10 — Гигиена UI (Textual) (2026-11-04)
 
-## Открытые решения (требуют подтверждения Саши)
+Устранение решений «не в духе Textual» в `ui/` без изменения поведения обработки.
+Ядро (`flatregister/pipeline/*`) не трогалось.
+
+- [x] `ui/messages.py`: `ProgressUpdate(Message)` — типизированное сообщение прогресса
+      (`stage`, `current|None`, `total|None`); `total=None` — неопределённый индикатор.
+- [x] `ui/progress.py`: один `ProgressScreen` с `ProgressBar(total=None)`
+      вместо двух экранов `LoaderIndicatorCustom` + `ProgressBarCustom`; убран
+      `time.sleep(1)`, `call_after_refresh`, `mount`/`remove` виджета.
+- [x] `ui/processing.py`: `run_processing(app, ...)` — единый путь запуска обработки
+      через `app.run_worker(..., group="processing", exclusive=True)`; тело в
+      `asyncio.to_thread`; результат — через `on_done(failure, failures, processed_count)`
+      в UI-потоке; `ProcessingState` на `App` хранит воркер.
+- [x] `ui/screens.py`: RegisterScreen.zakрывает `_start_processing` через
+      `run_processing`; модалки (`SettingsScreen`, `SettingsScreenRegister`,
+      `ContactsScreen`, `ResultProcessingDirectoryScreen`) получили `ESC_BINDING`;
+      ветка `generalosv` и `SettingsScreen` получили кнопку «Отмена»;
+      проверка результата `update_config` — при `False` модалка не закрывается,
+      пользователю показывается `notify(... severity="error")`.
+- [x] `ResultProcessingDirectotyScreen` → `ResultProcessingDirectoryScreen`;
+      `tools/smoke_ui.py` и `AGENTS.md` обновлены.
+- [x] `ui/widgets.py` удалён (содержал только `ModalScreen`, не виджеты).
+- [x] `style.tcss`: глобальные `Select`/`Button` → селекторы по `#id`/классу;
+      удалён неиспользуемый `.scrollable-content` и `#scroll_input`;
+      `#register_requirements` без `ScrollableContainer` (клавиатурная прокрутка).
+- [x] `ui/app.py`: `#select_register` / `#continue` через селекторы, `@on(...,
+      "#id")`; страховка `_CSS_PATH` (путь к `.exe`); `processing_state`
+      в `__init__`; `contact_visibility` / `check_action` сохранены (S11).
+- [x] `tests/test_ui.py`: 5 тестов на `run_test()` + `asyncio.run` (F3/Esc,
+      F1/Esc, выбор регистра → «Продолжить», «Отмена» в generalosv, Esc в настройках).
+- [x] `tests/test_pipeline.py`: очищен от комментариев на кириллице (ruff E501),
+      поведение не менялось.
+- [x] `tests/conftest.py`: `isolated_config` задаёт путь через env; UI-тесты
+      не нуждаются в xlwings-заглушке.
+
+**Критерий готовности S10:**
+| Проверка | Ожидание |
+|---|---|
+| `uv run pytest` | 119 passed |
+| `uv run ruff check .` | 0 замечаний |
+| `tools/smoke_ui.py` | 0 FAIL |
+| Регрессия GAZ + МЭЗ | регрессий **0**, exit 0 |
+
+### S11 — Структура UI и API ядра (2026-11-04)
+
+Структурные изменения: публичный API ядра, единая воронка путей, MenuScreen как default-экран.
+Ядро (`flatregister/pipeline/*`) меняется — требует регрессии.
+
+- [x] `flatregister/pipeline/handler.py`: публичный `process(input_path, type_register, on_progress=None) -> ProcessingResult`
+      — единственная точка входа; сам валидирует путь через `validate_paths`, сам решает
+      «файл/папка», сам сохраняет и открывает результат. `handle_input` оставлена для
+      обратной совместимости с тестами (вызывает `process`).
+- [x] `flatregister/excel_io.py`: `generate_dash_combinations` ограничивает перебор тире:
+      при <= 10 тире — полный `product` (2^N); при > 10 — только однородные замены
+      (все `-`→`—` или все `—`→`-`), защита от взрыва комбинаторики.
+- [x] `ui/screens.py`: `MenuScreen` — default-экран с `Select` регистра, кнопкой
+      «Продолжить», биндингами F1/F3. `RegisterScreen` лишён `contact_visibility`/`check_action`.
+- [x] `ui/app.py`: `get_default_screen()` возвращает `MenuScreen()`; `BINDINGS` пусто;
+      убраны `contact_visibility`, `check_action`, `select_changed`, `button_pressed`,
+      `action_open_settings`, `action_open_contacts` (переехали в `MenuScreen`).
+- [x] `ui/processing.py`: `_processing_thread_body` вызывает `file_handler.process(...)`
+      вместо `handle_input` + `_save_and_open_batch_result`.
+- [x] `tests/test_pipeline.py`: все вызовы `handle_input` → `process`;
+      убран дублирующий `_save_and_open_batch_result` в тесте санитизации имени листа.
+- [x] `tests/test_ui.py`: обновлены под новую структуру (MenuScreen как default screen).
+
+**Критерий готовности S11:**
+| Проверка | Ожидание |
+|---|---|
+| `uv run pytest` | 119 passed |
+| `uv run ruff check .` | 0 замечаний |
+| `tools/smoke_ui.py` | 0 FAIL |
+| Регрессия GAZ + МЭЗ | регрессий **0**, exit 0 |
+
+**Открытые решения (переносятся в следующую сессию):** E4 структура экранов
+(частично закрыта через MenuScreen). E1 отмена обработки, E2 DEFAULT_CSS,
+E3 smoke_ui в pytest — закрыты.
+
 
 Это расхождения, найденные при разборе кода. Эталон — ручной расчёт бухгалтера,
 а не «так выглядит логичнее». **Не править молча.**

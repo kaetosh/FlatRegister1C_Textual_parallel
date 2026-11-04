@@ -8,6 +8,7 @@ import concurrent.futures
 import contextlib
 import os
 import tempfile
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Type
@@ -16,6 +17,7 @@ import pandas as pd
 
 from flatregister.errors import (
     FileFailure,
+    InputPathError,
     NoInputFilesError,
     NoRecognizedRegistersError,
     NotSpreadsheetError,
@@ -66,6 +68,7 @@ class FileHandler:
         self.validator = ExcelValidator()
         self.processor_factory = FileProcessorFactory()
         self.result = ProcessingResult()
+        self.cancel_event: Optional[threading.Event] = None
 
     def _record_failure(self, file_name: str, failure: FileFailure) -> None:
         """Единственное место, где отказ файла попадает в отчёт и в журнал.
@@ -109,12 +112,66 @@ class FileHandler:
                 return None, None, None
             raise
 
-    def handle_input(self, input_path: Path, type_register: str, progress_callback) -> None:
+    def process(
+        self,
+        input_path: Path,
+        type_register: str,
+        on_progress=None,
+        cancel_event: Optional[threading.Event] = None,
+    ) -> ProcessingResult:
+        """Единственная публичная точка входа в обработку.
+
+        Сам решает «файл или папка», сам проверяет путь через
+        :func:`validate_paths` (единая воронка с починкой тире),
+        сам сохраняет и открывает итоговый файл.
+
+        Args:
+            input_path: Путь к файлу или папке.
+            type_register: Ключ регистра из ``REGISTER_SPEC``.
+            on_progress: Колбэк прогресса ``(current, total, stage_description)``.
+            cancel_event: Событие отмены — если установлено, обработка прерывается.
+
+        Returns:
+            :class:`ProcessingResult` с кадрами, проверками и отказами.
+
+        Raises:
+            InputPathError: Путь не существует и не чинится заменой тире.
+            NotSpreadsheetError: Файл не .xlsx.
+            NoInputFilesError: В папке нет .xlsx.
+            NoRecognizedRegistersError: Ни один файл не распознан.
+            OutputError: Не удалось записать/открыть итоговый файл.
+        """
+        from flatregister.excel_io import validate_paths
+
+        # Единая воронка валидации путей: починка тире + проверка существования.
+        validate_paths([input_path])
+
         self.result.register_type = type_register
+        self.cancel_event = cancel_event
+        progress_callback = on_progress
+
         if input_path.is_file():
             self._process_single_file(input_path)
+            if self.result.files:
+                self._save_and_open_batch_result(progress_callback=progress_callback)
         elif input_path.is_dir():
             self._process_directory(input_path, progress_callback)
+        else:
+            raise InputPathError(
+                f"Путь не существует: {input_path}",
+                hint="Укажите существующий файл .xlsx или папку с выгрузками 1С.",
+            )
+
+        return self.result
+
+    def handle_input(self, input_path: Path, type_register: str, progress_callback) -> None:
+        """Обработать входной путь.
+
+        Оставлена для обратной совместимости с тестами. Новый код должен
+        пользоваться :meth:`process`, который сам решает «файл/папка» и сам
+        сохраняет результат.
+        """
+        self.process(input_path, type_register, on_progress=progress_callback)
 
     def _process_single_file(self, file_path: Path) -> None:
         """Обработать одиночный файл.
@@ -136,6 +193,9 @@ class FileHandler:
         else:
             total_files = len(excel_files)
             for i, file_path in enumerate(excel_files):
+                # Проверка отмены перед каждым файлом
+                if self.cancel_event and self.cancel_event.is_set():
+                    break
                 processor_class, result, check = self._process_one(file_path, collect_failures=True)
                 if processor_class is not None:
                     result_collector.add_result(processor_class, result, check)
@@ -154,6 +214,7 @@ class FileHandler:
         # Определяем количество воркеров (например, не больше числа CPU и не больше количества файлов)
         max_workers = min(os.cpu_count() or 4, total_files)
 
+        futures: list = []
         with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
             future_to_file = {
                 executor.submit(_process_file_parallel, file_path, self.result.register_type): file_path
@@ -161,6 +222,13 @@ class FileHandler:
             }
 
             for i, future in enumerate(concurrent.futures.as_completed(future_to_file)):
+                # Проверка отмены перед обработкой результата
+                if self.cancel_event and self.cancel_event.is_set():
+                    # Отменяем все ещё не завершённые future
+                    for f in futures:
+                        f.cancel()
+                    break
+                futures.append(future)
                 file_path = future_to_file[future]
                 try:
                     file_name, processor_class, result, check, failure = future.result()
