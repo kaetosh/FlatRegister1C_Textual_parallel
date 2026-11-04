@@ -135,6 +135,19 @@ NON_UPP_SPEC = AccountOSVSpec(
 )
 
 
+#: Колонки, которые в выгрузке стоят в одной строке с контрагентом.
+#:
+#: В ОСВ счёта «Вид связи КА за период» и периоды его действия заполнены
+#: только в строке контрагента. Если контрагент не самый глубокий уровень
+#: субконто, его строка уходит как промежуточный итог, и значения теряются.
+#: Имена — ровно как в выгрузке 1С (двойные пробелы значимы).
+VIEW_LINK_COLUMNS = (
+    'Вид связи КА за период',
+    'Начало периода  для вида связи',
+    'Конец  периода для вида связи',
+)
+
+
 class BaseAccountOSVProcessor(FileProcessor):
     """Базовый обработчик для Анализа счета 1С"""
 
@@ -300,6 +313,32 @@ class BaseAccountOSVProcessor(FileProcessor):
     def _remove_duplicate_rows(self, df: pd.DataFrame, account_col: str, max_level: int) -> pd.DataFrame:
         """Удаление дублирующихся строк"""
         return drop_interim_total_rows(df, account_col, max_level)
+
+    def _fill_until_itogo(self, df: pd.DataFrame, fill_col: str,
+                          itogo_col: str) -> pd.DataFrame:
+        """Дозаполнить ``fill_col`` вниз до ближайшей строки «Итого».
+
+        В выгрузке 1С «Вид связи КА за период» и периоды его действия стоят
+        в одной строке с контрагентом. Контрагент может оказаться не самым
+        глубоким уровнем субконто — тогда его строка уходит как промежуточный
+        итог (см. :func:`drop_interim_total_rows`), а значения теряются.
+
+        Метод переносит значения вниз, но не дальше строки «Итого»: она
+        закрывает блок, поэтому значение не протекает к следующему контрагенту.
+        """
+        if fill_col not in df.columns or itogo_col not in df.columns:
+            return df
+
+        is_itogo = df[itogo_col].str.startswith('Итого', na=False)
+        group = is_itogo.shift(1, fill_value=False).cumsum()
+        df[fill_col] = df.groupby(group)[fill_col].ffill()
+        return df
+
+    def _fill_view_link_columns(self, df: pd.DataFrame, itogo_col: str) -> pd.DataFrame:
+        """Перенести вид связи и периоды его действия на самые глубокие строки."""
+        for fill_col in VIEW_LINK_COLUMNS:
+            df = self._fill_until_itogo(df, fill_col, itogo_col)
+        return df
     
     def _create_check_tables(self, df: pd.DataFrame, df_for_check: pd.DataFrame, file_name: str) -> pd.DataFrame:
         """Создание и возврат таблицы для проверки"""
@@ -451,6 +490,10 @@ class AccountOSV_UPPFileProcessor(BaseAccountOSVProcessor):
         df_for_check = df[df['Субконто'] == 'Итого'][['Субконто'] + desired_order_not_with_suff].copy().tail(2).iloc[[0]]
         df_for_check[desired_order_not_with_suff] = df_for_check[desired_order_not_with_suff].astype(float).fillna(0)
         df_for_check = calculate_check_values(df_for_check, self._columns_config)
+
+        # Перенос вида связи и периодов его действия на самые глубокие строки:
+        # порядок субконто в выгрузке не должен влиять на результат.
+        df = self._fill_view_link_columns(df, 'Субконто')
 
         # Удаление дублирующихся строк
         df = self._remove_duplicate_rows(df, 'Субконто', max_level)
@@ -638,7 +681,11 @@ class AccountOSV_NonUPPFileProcessor(BaseAccountOSVProcessor):
         df_for_check = df[df['Счет'] == 'Итого'][['Счет'] + desired_order_not_with_suff].copy().tail(2).iloc[[0]]
         df_for_check[desired_order_not_with_suff] = df_for_check[desired_order_not_with_suff].astype(float).fillna(0)
         df_for_check = calculate_check_values(df_for_check, self._columns_config)
-        
+
+        # Перенос вида связи и периодов его действия на самые глубокие строки:
+        # порядок субконто в выгрузке не должен влиять на результат.
+        df = self._fill_view_link_columns(df, 'Счет')
+
         # Удаление дублирующихся строк
         df = self._remove_duplicate_rows(df, 'Счет', max_level)
         

@@ -16,6 +16,7 @@ import pandas as pd
 
 from flatregister.errors import (
     FileFailure,
+    InputPathError,
     NoInputFilesError,
     NoRecognizedRegistersError,
     NotSpreadsheetError,
@@ -66,6 +67,7 @@ class FileHandler:
         self.validator = ExcelValidator()
         self.processor_factory = FileProcessorFactory()
         self.result = ProcessingResult()
+        self.cancel_event = None
 
     def _record_failure(self, file_name: str, failure: FileFailure) -> None:
         """Единственное место, где отказ файла попадает в отчёт и в журнал.
@@ -109,12 +111,66 @@ class FileHandler:
                 return None, None, None
             raise
 
-    def handle_input(self, input_path: Path, type_register: str, progress_callback) -> None:
+    def process(
+        self,
+        input_path: Path,
+        type_register: str,
+        on_progress=None,
+        cancel_event=None,
+
+    ) -> ProcessingResult:
+        """Единственная публичная точка входа в обработку.
+
+        Сам решает «файл или папка», сам проверяет путь через
+        :func:`validate_paths` (единая воронка с починкой тире),
+        сам сохраняет и открывает итоговый файл.
+
+        Args:
+            input_path: Путь к файлу или папке.
+            type_register: Ключ регистра из ``REGISTER_SPEC``.
+            on_progress: Колбэк прогресса ``(current, total, stage_description)``.
+
+        Returns:
+            :class:`ProcessingResult` с кадрами, проверками и отказами.
+
+        Raises:
+            InputPathError: Путь не существует и не чинится заменой тире.
+            NotSpreadsheetError: Файл не .xlsx.
+            NoInputFilesError: В папке нет .xlsx.
+            NoRecognizedRegistersError: Ни один файл не распознан.
+            OutputError: Не удалось записать/открыть итоговый файл.
+        """
+        from flatregister.excel_io import validate_paths
+
+        # Единая воронка валидации путей: починка тире + проверка существования.
+        validate_paths([input_path])
+
         self.result.register_type = type_register
+        self.cancel_event = cancel_event
+        progress_callback = on_progress
+
         if input_path.is_file():
             self._process_single_file(input_path)
+            if self.result.files:
+                self._save_and_open_batch_result(progress_callback=progress_callback)
         elif input_path.is_dir():
             self._process_directory(input_path, progress_callback)
+        else:
+            raise InputPathError(
+                f"Путь не существует: {input_path}",
+                hint="Укажите существующий файл .xlsx или папку с выгрузками 1С.",
+            )
+
+        return self.result
+
+    def handle_input(self, input_path: Path, type_register: str, progress_callback) -> None:
+        """Обработать входной путь.
+
+        Оставлена для обратной совместимости с тестами. Новый код должен
+        пользоваться :meth:`process`, который сам решает «файл/папка» и сам
+        сохраняет результат.
+        """
+        self.process(input_path, type_register, on_progress=progress_callback)
 
     def _process_single_file(self, file_path: Path) -> None:
         """Обработать одиночный файл.
@@ -131,29 +187,43 @@ class FileHandler:
         result_collector = ResultCollector(self.result.register_type)
 
         # Проверка условия параллельной обработки
-        if self.parallel and self.result.register_type != 'turnover':
-            self._process_directory_parallel(dir_path, progress_callback, result_collector)
+        if self.parallel:
+            self._process_directory_parallel(excel_files, progress_callback, result_collector)
         else:
             total_files = len(excel_files)
             for i, file_path in enumerate(excel_files):
+                if self.cancel_event is not None and self.cancel_event.is_set():
+                    break
                 processor_class, result, check = self._process_one(file_path, collect_failures=True)
                 if processor_class is not None:
                     result_collector.add_result(processor_class, result, check)
-                progress_callback(
-                    i + 1,
-                    total_files,
-                    stage_description=f"Обработано файлов {i + 1}/{total_files}"
-                )
-            progress_callback(0, 0, stage_description='Сохраняем и открываем итоговый файл')
+                if progress_callback:
+                    progress_callback(
+                        i + 1,
+                        total_files,
+                        stage_description=f"Обработано файлов {i + 1}/{total_files}"
+                    )
+            if self.cancel_event is not None and self.cancel_event.is_set():
+                return
+            if progress_callback:
+                progress_callback(0, 0, stage_description='Сохраняем и открываем итоговый файл')
             self._save_combined_results(result_collector)
 
-    def _process_directory_parallel(self, dir_path: Path, progress_callback, result_collector: ResultCollector):
-        excel_files = self._get_excel_files(dir_path)
+    def _process_directory_parallel(self, excel_files: List[Path], progress_callback, result_collector: ResultCollector):
         total_files = len(excel_files)
 
-        # Определяем количество воркеров (например, не больше числа CPU и не больше количества файлов)
-        max_workers = min(os.cpu_count() or 4, total_files)
+        # Определяем количество воркеров: не больше числа CPU/файлов и не
+        # больше разумного потолка (много одновременных Excel через xlwings
+        # нестабильно). Переопределяется через config/general_settings.
+        from flatregister.config import get_max_parallel_workers
 
+        configured = get_max_parallel_workers()
+        auto = min(os.cpu_count() or 4, total_files, 4)
+        max_workers = min(configured if configured > 0 else auto, total_files)
+        if max_workers < 1:
+            max_workers = 1
+
+        completed: list = []
         with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
             future_to_file = {
                 executor.submit(_process_file_parallel, file_path, self.result.register_type): file_path
@@ -161,35 +231,51 @@ class FileHandler:
             }
 
             for i, future in enumerate(concurrent.futures.as_completed(future_to_file)):
+                if self.cancel_event is not None and self.cancel_event.is_set():
+                    for f in future_to_file:
+                        if not f.done():
+                            f.cancel()
+                    break
                 file_path = future_to_file[future]
                 try:
                     file_name, processor_class, result, check, failure = future.result()
-                    if failure is not None:
-                        self._record_failure(file_name, failure)
-                    else:
-                        result_collector.add_result(processor_class, result, check)
-                        self.result.processed_count += 1
+                    completed.append((file_name, processor_class, result, check, failure))
                 except Exception as error:
                     # Сюда попадает только падение самого ProcessPoolExecutor
                     # (процесс убит, нет свободной памяти) — не отказ файла.
-                    self._record_failure(
-                        file_path.name,
+                    completed.append((
+                        file_path.name, None, None, None,
                         describe_exception(error, file_name=file_path.name),
-                    )
+                    ))
                 finally:
-                    progress_callback(
-                        i + 1,
-                        total_files,
-                        stage_description=f"Обработано файлов {i + 1}/{total_files}"
-                    )
+                    if progress_callback:
+                        progress_callback(
+                            i + 1,
+                            total_files,
+                            stage_description=f"Обработано файлов {i + 1}/{total_files}"
+                        )
 
-        progress_callback(0, 0, stage_description='Сохраняем и открываем итоговый файл')
+        if self.cancel_event is not None and self.cancel_event.is_set():
+            return
+
+        # Собираем результаты в детерминированном порядке (по имени файла),
+        # чтобы итоговый отчёт не зависел от порядка завершения future.
+        completed.sort(key=lambda item: item[0])
+        for file_name, processor_class, result, check, failure in completed:
+            if failure is not None:
+                self._record_failure(file_name, failure)
+            else:
+                result_collector.add_result(processor_class, result, check)
+                self.result.processed_count += 1
+
+        if progress_callback:
+            progress_callback(0, 0, stage_description='Сохраняем и открываем итоговый файл')
         self._save_combined_results(result_collector)
 
     @staticmethod
     def _get_excel_files(dir_path: Path) -> List[Path]:
         """Получить список Excel файлов в директории"""
-        files = list(dir_path.glob("*.xlsx"))
+        files = sorted(dir_path.glob("*.xlsx"), key=lambda p: p.name)
         if not files:
             raise NoInputFilesError(
                 "В папке нет файлов Excel (.xlsx).",
@@ -266,13 +352,14 @@ class FileHandler:
             for sheet_name, df in self.result.files.items():
                 safe_name = sanitize_sheet_name(sheet_name)
                 df = df.map(lambda x: x.rstrip() if isinstance(x, str) else x)
-                df.to_excel(writer, sheet_name=safe_name, index=False)
+                write_df_in_chunks(writer, df, safe_name)
 
             # Данные проверки
             for sheet_name, df in self.result.checks.items():
                 safe_name = sanitize_sheet_name(f"Проверка_{sheet_name}")
                 if not df.empty:
-                    df.to_excel(writer, sheet_name=safe_name, index=False)
+                    df = df.map(lambda x: x.rstrip() if isinstance(x, str) else x)
+                    write_df_in_chunks(writer, df, safe_name)
 
         with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp:
             temp_filename = tmp.name

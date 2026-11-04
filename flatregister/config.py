@@ -40,7 +40,8 @@ DEFAULT_CONFIG = {
         ["57", "57", 1],
     ],
     "general_settings": {
-        "parallel_processing": False
+        "parallel_processing": False,
+        "max_parallel_workers": 0
     },
     "keep_subaccounts": False  # True оставлять все субсчета (включая промежуточные)
 }
@@ -269,6 +270,16 @@ def get_parallel_processing_option() -> bool:
     general_options = config.get("general_settings", DEFAULT_CONFIG.get("general_settings", {}))
     parallel_processing_option = bool(general_options.get("parallel_processing", 0))
     return parallel_processing_option
+
+
+# Получить ограничение числа воркеров параллельной обработки (0 = авто)
+def get_max_parallel_workers() -> int:
+    config = read_config()
+    general_options = config.get("general_settings", DEFAULT_CONFIG.get("general_settings", {}))
+    try:
+        return int(general_options.get("max_parallel_workers", 0))
+    except (TypeError, ValueError):
+        return 0
 
 
 # Получить настройку для общей ОСВ - показываем все счета или только самого глубокого уровня

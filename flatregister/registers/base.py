@@ -5,10 +5,6 @@ Created on Mon Aug 25 12:22:19 2025
 @author: a.karabedyan
 """
 
-import contextlib
-import os
-import tempfile
-import time
 from abc import ABC, abstractmethod
 from io import BytesIO
 from pathlib import Path
@@ -16,9 +12,9 @@ from typing import List
 
 import openpyxl
 import pandas as pd
-import xlwings as xw
 
 from flatregister.errors import RegisterNotRecognizedError
+from flatregister.excel_io import get_displayed_value
 from flatregister.hierarchy import (
     is_accounting_code,
     is_parent,
@@ -123,44 +119,16 @@ class FileProcessor(ABC):
                 header_row_idx = i
                 break
     
-        # Если нашли проблемную строку — считываем её с xlwings для точного форматирования
+        # Если нашли проблемную строку — перечитываем её отображаемые значения
+        # через openpyxl (number_format), без COM/Excel, чтобы работать в
+        # параллельном режиме ProcessPoolExecutor.
         if header_row_idx is not None:
-            # --- Считаем проблемную строку с xlwings для точного форматирования ---
-            # Сохраняем BytesIO во временный файл (xlwings не работает с BytesIO напрямую)
-            with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as tmp_file:
-                tmp_file.write(file_like_object.getvalue())
-                tmp_path = tmp_file.name
-
-            # Здесь поднимается настоящий Excel. Раньше книга и приложение
-            # закрывались только на успешном пути, и при любой ошибке внутри
-            # оставался зависший процесс EXCEL.EXE — а это уже следующий файл
-            # не читается с непонятным сообщением. Поэтому очистка в finally,
-            # а каждая операция закрытия глотает свои ошибки: повторное
-            # закрытие уже закрытого объекта не должно маскировать исходную.
-            app = None
-            wb_xl = None
-            try:
-                app = xw.App(visible=False)
-                wb_xl = app.books.open(tmp_path)
-                sht_xl = wb_xl.sheets[0]
-
-                # Читаем отформатированные значения проблемной строки (1-based индексация в xlwings)
-                formatted_header_row = []
-                for col_idx in range(1, max_col + 1):
-                    cell = sht_xl.cells(header_row_idx + 1, col_idx)
-                    formatted_header_row.append(cell.api.Text)  # именно отображаемое значение
-            finally:
-                if wb_xl is not None:
-                    with contextlib.suppress(Exception):
-                        wb_xl.close()
-                if app is not None:
-                    with contextlib.suppress(Exception):
-                        app.quit()
-                with contextlib.suppress(OSError):
-                    os.unlink(tmp_path)
-                time.sleep(0.5)  # Пауза, чтобы Excel успел освободить файл
-
-            # Заменяем строку в данных на отформатированную из xlwings
+            formatted_header_row = []
+            for cell in sheet[header_row_idx + 1][:max_col]:
+                formatted_header_row.append(get_displayed_value(cell))
+            # добиваем до max_col, если строка короче
+            while len(formatted_header_row) < max_col:
+                formatted_header_row.append("")
             data[header_row_idx] = formatted_header_row
     
         # Формируем DataFrame из всех строк начиная со второй (строка 1 Excel — заголовки или данные, но мы не выделяем)

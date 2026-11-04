@@ -71,7 +71,7 @@ class ResultCollector:
 
         for cls, (res_list, check_list) in results_dict.items():
             if res_list:
-                all_dfs.append(pd.concat(res_list))
+                all_dfs.append(pd.concat(res_list, ignore_index=True))
             if check_list:
                 all_check_dfs.append(pd.concat(check_list))
             last_shiftable_cls = cls  # запоминаем последний класс с shiftable_level
@@ -93,7 +93,7 @@ class ResultCollector:
     def _concat_and_sort(self, results: List[pd.DataFrame], processor_type: str) -> pd.DataFrame:
         if not results:
             return pd.DataFrame()
-        combined = pd.concat(results)
+        combined = pd.concat(results, ignore_index=True)
         if self.entry is None:
             return combined
         return sort_columns(combined, column_order(self.register_type, processor_type))
